@@ -1,0 +1,66 @@
+export const ar = {
+    // Compatibility
+    compatibilityTitle: "فحص التوافق",
+    compatibilitySubtitle: "اختر مكونات جهازك للتأكد من توافق المنتج.",
+    cpuLabel: "المعالج (CPU)",
+    cpuIntel: "Intel",
+    cpuAmd: "AMD",
+    gpuLabel: "كرت الشاشة (GPU)",
+    gpuNvidia: "NVIDIA",
+    gpuAmd: "AMD",
+    gpuIntel: "Intel",
+    igpuLabel: "هل لديك كرت شاشة داخلي من Intel؟",
+    igpuYes: "نعم",
+    igpuNo: "لا",
+    checkButton: "فحص التوافق",
+    fillAllFields: "يرجى ملء جميع الحقول لفحص التوافق.",
+    compatibleTitle: "متوافق!",
+    compatibleMessage: "هذا المنتج يعمل بشكل مثالي مع مواصفات جهازك.",
+    proceedButton: "متابعة للشراء",
+    incompatibleTitle: "غير متوافق",
+    incompatibleMessageSinki: "منتجات Sinki تعمل فقط مع كروت الشاشة من NVIDIA. يرجى التحقق من منتجاتنا الأخرى.",
+    incompatibleMessageCheatloop: "منتجات Cheatloop لا تعمل مع وجود كرت شاشة داخلي من Intel. يرجى التحقق من منتجاتنا الأخرى.",
+    incompatibleMessageGeneral: "هذا المنتج غير متوافق مع مواصفات جهازك.",
+    suggestionsTitle: "المنتجات المتوافقة المقترحة:",
+    noSuggestions: "للأسف، لا توجد منتجات أخرى متوافقة مع المواصفات التي اخترتها.",
+    loading: "جاري التحميل...",
+    error: "حدث خطأ أثناء تحميل تفاصيل المنتج.",
+    goBack: "العودة",
+    errorTitle: "حدث خطأ",
+    checkingFor: "جاري فحص التوافق لـ:",
+    backToProducts: "العودة إلى كل المنتجات",
+
+    // Payment
+    payFor: 'الدفع مقابل',
+    paymentFor: 'الدفع مقابل',
+    instructionsTitle: 'تعليمات الدفع',
+    instructions: [
+        'افتح الكاميرا على هاتفك المحمول.',
+        'امسح رمز الاستجابة السريعة (QR) الظاهر أعلاه.',
+        'افتح الرابط الذي يظهر على شاشتك وأكمل عملية الدفع.',
+        {
+            caption: 'بعد الدفع، سيظهر إشعار. اضغط على أيقونة الجرس في أعلى الصفحة.',
+            src: 'https://i.imgur.com/your-image-1.png', // Placeholder for notification icon
+            alt: 'أيقونة جرس الإشعارات'
+        },
+        {
+            caption: 'ابحث عن إشعار الشراء واضغط على "تأكيد" لتأكيد استلام الخدمة.',
+            src: 'https://i.imgur.com/your-image-2.png', // Placeholder for confirm button
+            alt: 'زر التأكيد في الإشعار'
+        },
+        'ستظهر لك نافذة. يرجى ملء تفاصيلك والضغط على "إرسال إلى تيليجرام" لاستلام مفتاح المنتج الخاص بك.',
+    ],
+    deliveryTitle: 'أكّد عملية الشراء',
+    deliverySubtitle: 'بعد الدفع، تحقق من إشعاراتك (أيقونة الجرس في الأعلى) لتأكيد عملية الشراء والحصول على مفتاحك.',
+    contactButton: 'تحقق من الإشعارات',
+    modalTitle: 'إرسال تفاصيل الشراء',
+    emailLabel: 'البريد الإلكتروني للشراء *',
+    emailPlaceholder: 'example@email.com',
+    phoneLabel: 'رقم الهاتف (اختياري)',
+    phonePlaceholder: 'مثال: +9641234567890',
+    anydeskLabel: 'معرف AnyDesk (اختياري)',
+    modalSubmitButton: 'إرسال إلى تيليجرام',
+    formError: 'يرجى تقديم عنوان بريد إلكتروني صالح.',
+    errorLoadingImage: 'لا يمكن تحميل صورة الدفع.',
+    backToHome: 'العودة إلى الرئيسية',
+};

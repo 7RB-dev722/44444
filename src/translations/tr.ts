@@ -1,0 +1,66 @@
+export const tr = {
+    // Compatibility
+    compatibilityTitle: "Uyumluluk Kontrolü",
+    compatibilitySubtitle: "Ürünün uyumlu olduğundan emin olmak için bilgisayar bileşenlerinizi seçin.",
+    cpuLabel: "İşlemci (CPU)",
+    cpuIntel: "Intel",
+    cpuAmd: "AMD",
+    gpuLabel: "Ekran Kartı (GPU)",
+    gpuNvidia: "NVIDIA",
+    gpuAmd: "AMD",
+    gpuIntel: "Intel",
+    igpuLabel: "Dahili bir Intel GPU'nuz var mı?",
+    igpuYes: "Evet",
+    igpuNo: "Hayır",
+    checkButton: "Uyumluluğu Kontrol Et",
+    fillAllFields: "Uyumluluğu kontrol etmek için lütfen tüm alanları doldurun.",
+    compatibleTitle: "Uyumlu!",
+    compatibleMessage: "Bu ürün donanım özelliklerinizle mükemmel çalışıyor.",
+    proceedButton: "Satın Almaya Devam Et",
+    incompatibleTitle: "Uyumsuz",
+    incompatibleMessageSinki: "Sinki ürünleri yalnızca NVIDIA ekran kartlarıyla çalışır. Lütfen diğer ürünlerimizi kontrol edin.",
+    incompatibleMessageCheatloop: "Cheatloop ürünleri aktif bir Intel dahili GPU ile çalışmaz. Lütfen diğer ürünlerimizi kontrol edin.",
+    incompatibleMessageGeneral: "Bu ürün donanım özelliklerinizle uyumlu değil.",
+    suggestionsTitle: "Önerilen Uyumlu Ürünler:",
+    noSuggestions: "Maalesef, seçtiğiniz donanım için başka uyumlu ürün bulunmamaktadır.",
+    loading: "Yükleniyor...",
+    error: "Ürün detayları yüklenirken bir hata oluştu.",
+    goBack: "Geri Dön",
+    errorTitle: "Bir Hata Oluştu",
+    checkingFor: "Şunun için uyumluluk kontrol ediliyor:",
+    backToProducts: "Tüm Ürünlere Geri Dön",
+
+    // Payment
+    payFor: 'Şunun için öde',
+    paymentFor: 'Ödeme',
+    instructionsTitle: 'Ödeme Talimatları',
+    instructions: [
+        'Cep telefonunuzda kamerayı açın.',
+        'Yukarıda gösterilen QR kodunu tarayın.',
+        'Ekranınızda görünen bağlantıyı açın ve ödemeyi tamamlayın.',
+        {
+            caption: 'Ödemeden sonra bir bildirim görünecektir. Sayfanın üst kısmındaki zil simgesine tıklayın.',
+            src: 'https://i.imgur.com/your-image-1.png', // Placeholder for notification icon
+            alt: 'Bildirim Zili Simgesi'
+        },
+        {
+            caption: 'Satın alma bildirimini bulun ve hizmetin alındığını onaylamak için "Onayla" düğmesine tıklayın.',
+            src: 'https://i.imgur.com/your-image-2.png', // Placeholder for confirm button
+            alt: 'Bildirimdeki Onay Düğmesi'
+        },
+        'Bir form görünecektir. Lütfen bilgilerinizi doldurun ve ürün anahtarınızı almak için "Telegram\'a Gönder"e tıklayın.',
+    ],
+    deliveryTitle: 'Satın Almanızı Onaylayın',
+    deliverySubtitle: 'Ödeme yaptıktan sonra, satın alma işleminizi onaylamak ve anahtarınızı almak için bildirimlerinizi (üstteki zil simgesi) kontrol edin.',
+    contactButton: 'Bildirimleri Kontrol Et',
+    modalTitle: 'Satın Alma Detaylarını Gönder',
+    emailLabel: 'Satın Alma E-postası *',
+    emailPlaceholder: 'ornek@eposta.com',
+    phoneLabel: 'Telefon Numarası (İsteğe Bağlı)',
+    phonePlaceholder: 'örneğin, +905xxxxxxxxx',
+    anydeskLabel: 'AnyDesk ID/Adresi (İsteğe Bağlı)',
+    modalSubmitButton: 'Telegram\'a Gönder',
+    formError: 'Lütfen geçerli bir e-posta adresi girin.',
+    errorLoadingImage: 'Ödeme resmi yüklenemedi.',
+    backToHome: 'Ana Sayfaya Dön',
+};
