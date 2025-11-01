@@ -2,6 +2,7 @@ import React from 'react';
 import { Eye, Target, Zap, Shield, MessageCircle, Phone, Star, Crown, Gem, Image as ImageIcon, PlayCircle, QrCode } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
+import { cn } from '@/lib/utils';
 
 interface GamingProductCardProps {
   id?: string;
@@ -35,6 +36,48 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
   purchase_image_id
 }) => {
   const { settings, loading } = useSettings();
+  const cardSize = settings.product_card_size || 'default';
+
+  const sizeStyles = {
+    compact: {
+      wrapper: 'p-4 max-w-xs',
+      image: 'w-16 h-16',
+      title: 'text-lg mb-2',
+      price: 'text-3xl',
+      features: 'space-y-2 mb-4',
+      featureText: 'text-xs',
+      description: 'text-xs',
+      buyButton: 'py-3 px-6 text-base',
+      contactButton: 'p-2',
+      contactText: 'text-xs',
+    },
+    default: {
+      wrapper: 'p-6 max-w-sm',
+      image: 'w-20 h-20',
+      title: 'text-xl mb-3',
+      price: 'text-4xl',
+      features: 'space-y-3 mb-6',
+      featureText: 'text-sm',
+      description: 'text-sm',
+      buyButton: 'py-4 px-8 text-lg',
+      contactButton: 'p-3',
+      contactText: 'text-sm',
+    },
+    large: {
+      wrapper: 'p-8 max-w-md',
+      image: 'w-24 h-24',
+      title: 'text-2xl mb-4',
+      price: 'text-5xl',
+      features: 'space-y-3 mb-8',
+      featureText: 'text-base',
+      description: 'text-base',
+      buyButton: 'py-5 px-10 text-xl',
+      contactButton: 'p-4',
+      contactText: 'text-base',
+    }
+  };
+
+  const styles = sizeStyles[cardSize as keyof typeof sizeStyles] || sizeStyles.default;
 
   const getFeatureIcon = (feature: string) => {
     if (feature.toLowerCase().includes('esp')) return <Eye className="w-4 h-4" />;
@@ -108,15 +151,20 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
   const colors = getBrandColors();
 
   const BuyButtonContent = () => {
-    const commonClasses = `
+    const commonClasses = cn(`
       block w-full text-center text-white 
-      py-4 px-8 sm:px-12 rounded-[5rem] border-[5px] 
-      text-lg leading-none tracking-wider transition-all duration-300
+      rounded-[5rem] border-[5px] 
+      leading-none tracking-wider transition-all duration-300
       hover:cursor-pointer relative z-10
-      ${colors.buyButton.bg} ${colors.buyButton.hoverBg}
-      ${colors.buyButton.border} ${colors.buyButton.hoverBorder}
-      hover:shadow-lg hover:shadow-current/25 flex items-center justify-center space-x-2
-    `;
+      flex items-center justify-center space-x-2
+      `,
+      styles.buyButton,
+      colors.buyButton.bg,
+      colors.buyButton.hoverBg,
+      colors.buyButton.border,
+      colors.buyButton.hoverBorder,
+      'hover:shadow-lg hover:shadow-current/25'
+    );
 
     const isCodmProduct = title.toLowerCase().includes('codm') || title.toLowerCase().includes('call of duty');
     const destination = buyLink ? buyLink : (id && purchase_image_id ? `/pay/${id}` : null);
@@ -141,13 +189,15 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
   };
 
   return (
-    <div className={`
-      relative group max-w-sm mx-auto
+    <div className={cn(`
+      relative group mx-auto w-full
       bg-gradient-to-br from-slate-800/60 via-slate-900/60 to-black/60 
-      backdrop-blur-xl rounded-2xl p-6 border transition-all duration-300
+      backdrop-blur-xl rounded-2xl border transition-all duration-300
       hover:scale-[1.02] hover:-translate-y-1
-      ${isPopular ? `${colors.border}` : 'border-slate-700/30 hover:border-cyan-500/20'}
-    `}>
+      `,
+      styles.wrapper,
+      isPopular ? `${colors.border}` : 'border-slate-700/30 hover:border-cyan-500/20'
+    )}>
       
       {isPopular && (
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
@@ -185,7 +235,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
             <img 
               src={image} 
               alt={title} 
-              className="w-20 h-20 object-contain filter drop-shadow-lg"
+              className={cn("object-contain filter drop-shadow-lg", styles.image)}
             />
             <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} rounded-lg blur-xl opacity-10 -z-10 animate-pulse`}></div>
           </div>
@@ -193,11 +243,11 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
       )}
       
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-white mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-400 group-hover:bg-clip-text transition-all duration-300">
+        <h3 className={cn("font-bold text-white group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-400 group-hover:bg-clip-text transition-all duration-300", styles.title)}>
           {title}
         </h3>
         <div className="relative">
-          <div className={`text-4xl font-bold ${colors.accent} mb-2 animate-pulse`}>
+          <div className={cn(`font-bold mb-2 animate-pulse ${colors.accent}`, styles.price)}>
             ${price}
           </div>
           <div className="text-sm text-gray-400 uppercase tracking-wider font-medium">
@@ -206,7 +256,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
         </div>
       </div>
       
-      <div className="space-y-3 mb-6">
+      <div className={cn("mb-6", styles.features)}>
         {features.map((feature, index) => (
           <div 
             key={index} 
@@ -218,7 +268,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
             <div className={`${colors.accent} group-hover:scale-110 transition-transform duration-300`}>
               {getFeatureIcon(feature)}
             </div>
-            <span className="text-sm font-medium">{feature}</span>
+            <span className={cn("font-medium", styles.featureText)}>{feature}</span>
           </div>
         ))}
       </div>
@@ -231,7 +281,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
       </div>
 
       <div className="mb-6">
-        <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 group-hover:text-gray-300 transition-colors duration-300">
+        <p className={cn("text-gray-400 leading-relaxed line-clamp-3 group-hover:text-gray-300 transition-colors duration-300", styles.description)}>
           {description}
         </p>
       </div>
@@ -239,20 +289,24 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
       <div className={`mb-6 p-4 ${colors.noteColor} border rounded-xl relative overflow-hidden`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-gradient-shift"></div>
         <div className="relative z-10">
-          <div className="flex items-start space-x-2 mb-4">
-            <div className="text-current mt-0.5 animate-bounce">⚠️</div>
-            <div>
-              <p className="text-current text-sm font-bold mb-2">Important Note</p>
-              <p className="text-gray-300 text-xs leading-relaxed">
-                {loading ? 'Loading...' : settings.product_card_note || 'After purchase, contact us to get your key and product'}
-              </p>
-            </div>
+          <div>
+            {!loading && settings.show_product_card_note !== 'false' && settings.product_card_note && (
+              <div className="flex items-start space-x-2 mb-4">
+                <div className="text-current mt-0.5 animate-bounce">⚠️</div>
+                <div>
+                  <p className="text-current text-sm font-bold mb-2">Important Note</p>
+                  <p className="text-gray-300 text-xs leading-relaxed">
+                    {settings.product_card_note}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col gap-3">
             <Link
               to={getGalleryLink()}
-              className="group/btn relative p-3 rounded-xl backdrop-blur-xl border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-yellow-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-yellow-400/60 overflow-hidden"
+              className={cn("group/btn relative rounded-xl backdrop-blur-xl border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-yellow-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-yellow-400/60 overflow-hidden", styles.contactButton)}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out"></div>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-yellow-500/10 via-yellow-400/20 to-yellow-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
@@ -262,7 +316,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
                   <ImageIcon className="w-5 h-5 text-yellow-400 group-hover/btn:text-yellow-300 transition-all duration-300 group-hover/btn:scale-110 drop-shadow-lg" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-yellow-400 font-bold text-sm group-hover/btn:text-yellow-300 transition-colors duration-300 drop-shadow-sm">
+                  <p className={cn("text-yellow-400 font-bold group-hover/btn:text-yellow-300 transition-colors duration-300 drop-shadow-sm", styles.contactText)}>
                     Winning Photos
                   </p>
                   <p className="text-yellow-300/60 text-xs group-hover/btn:text-yellow-200/80 transition-colors duration-300">
@@ -282,7 +336,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
                 href={videoLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group/btn relative p-3 rounded-xl backdrop-blur-xl border-2 border-red-500/30 bg-gradient-to-br from-red-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-red-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-red-400/60 overflow-hidden"
+                className={cn("group/btn relative rounded-xl backdrop-blur-xl border-2 border-red-500/30 bg-gradient-to-br from-red-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-red-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-red-400/60 overflow-hidden", styles.contactButton)}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-400/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out"></div>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-red-500/10 via-red-400/20 to-red-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
@@ -292,7 +346,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
                     <PlayCircle className="w-5 h-5 text-red-400 group-hover/btn:text-red-300 transition-all duration-300 group-hover/btn:scale-110 drop-shadow-lg" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-red-400 font-bold text-sm group-hover/btn:text-red-300 transition-colors duration-300 drop-shadow-sm">
+                    <p className={cn("text-red-400 font-bold group-hover/btn:text-red-300 transition-colors duration-300 drop-shadow-sm", styles.contactText)}>
                       Gameplay Video
                     </p>
                     <p className="text-red-300/60 text-xs group-hover/btn:text-red-200/80 transition-colors duration-300">
@@ -308,12 +362,12 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
               </a>
             )}
 
-            {!loading && settings.show_whatsapp_button === 'true' && (
+            {!loading && settings.show_whatsapp_button === 'true' && settings.show_all_whatsapp_buttons !== 'false' && (
               <a
                 href={loading ? '#' : settings.whatsapp_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group/btn relative p-3 rounded-xl backdrop-blur-xl border-2 border-green-500/30 bg-gradient-to-br from-green-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-green-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-green-400/60 overflow-hidden"
+                className={cn("group/btn relative rounded-xl backdrop-blur-xl border-2 border-green-500/30 bg-gradient-to-br from-green-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-green-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-green-400/60 overflow-hidden", styles.contactButton)}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out"></div>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/10 via-green-400/20 to-green-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
@@ -323,7 +377,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
                     <Phone className="w-5 h-5 text-green-400 group-hover/btn:text-green-300 transition-all duration-300 group-hover/btn:scale-110 drop-shadow-lg" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-green-400 font-bold text-sm group-hover/btn:text-green-300 transition-colors duration-300 drop-shadow-sm">
+                    <p className={cn("text-green-400 font-bold group-hover/btn:text-green-300 transition-colors duration-300 drop-shadow-sm", styles.contactText)}>
                       WhatsApp
                     </p>
                     <p className="text-green-300/60 text-xs group-hover/btn:text-green-200/80 transition-colors duration-300">
@@ -338,42 +392,11 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
                 </div>
               </a>
             )}
-
-            {!loading && settings.show_telegram_button === 'true' && (
-                <a
-                  href={loading ? '#' : settings.telegram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/btn relative p-3 rounded-xl backdrop-blur-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-blue-400/60 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out"></div>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/10 via-blue-400/20 to-blue-500/10 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                  
-                  <div className="relative z-10 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/30 to-blue-600/10 backdrop-blur-sm group-hover/btn:from-blue-400/40 group-hover/btn:to-blue-500/20 transition-all duration-300">
-                      <MessageCircle className="w-5 h-5 text-blue-400 group-hover/btn:text-blue-300 transition-all duration-300 group-hover/btn:scale-110 drop-shadow-lg" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-blue-400 font-bold text-sm group-hover/btn:text-blue-300 transition-colors duration-300 drop-shadow-sm">
-                        Telegram
-                      </p>
-                      <p className="text-blue-300/60 text-xs group-hover/btn:text-blue-200/80 transition-colors duration-300">
-                        Chat with us
-                      </p>
-                    </div>
-                    <div className="opacity-40 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 transition-all duration-300">
-                      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" className="w-4 h-4 text-blue-400">
-                        <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"></path>
-                      </svg>
-                    </div>
-                  </div>
-                </a>
-            )}
           </div>
         </div>
       </div>
       
-      <div className="mt-6">
+      <div className="mt-8 flex flex-col gap-4">
         <div className="voltage-button relative group w-full">
           <BuyButtonContent />
           
@@ -445,6 +468,22 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
             ></div>
           </div>
         </div>
+        {!loading && settings.show_telegram_button === 'true' && (
+          <a
+            href={settings.telegram_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn("group/btn relative w-full text-center rounded-xl backdrop-blur-xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-900/40 via-black-900/60 to-black/80 shadow-lg hover:shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] hover:-translate-y-0.5 active:scale-95 transition-all duration-500 ease-out cursor-pointer hover:border-blue-400/60 overflow-hidden", styles.contactButton)}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-out"></div>
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <MessageCircle className="w-5 h-5 text-blue-400 group-hover/btn:text-blue-300 transition-all duration-300" />
+              <span className={cn("text-blue-400 font-bold group-hover/btn:text-blue-300 transition-colors duration-300", styles.contactText)}>
+                Contact on Telegram
+              </span>
+            </div>
+          </a>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ const defaultSettings = {
   discord_url: 'https://discord.gg/sY5EcUVjeA',
   whatsapp_url: 'https://api.whatsapp.com/send?phone=9647832941204',
   telegram_url: 'https://t.me/+UbDn_RQ7pBw4MjRi',
+  telegram_purchase_url: '',
   site_name: 'Cheatloop',
   site_logo_url: '/cheatloop copy.png',
   hero_title: 'Dominate the Game',
@@ -29,6 +30,9 @@ const defaultSettings = {
   show_whatsapp_button: 'true',
   show_telegram_button: 'true',
   product_card_note: 'After purchase, contact us to get your key and product',
+  show_all_whatsapp_buttons: 'true',
+  show_product_card_note: 'true',
+  product_card_size: 'default',
 };
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -50,7 +54,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         setLoading(true);
         const fetchedSettings = await settingsService.getSettings();
         // Merge fetched settings with defaults to ensure all keys are present
-        setSettings(prev => ({ ...prev, ...fetchedSettings }));
+        setSettings(prev => ({ ...defaultSettings, ...fetchedSettings }));
         setError(null);
       } catch (err: any) {
         console.error("Failed to fetch settings:", err);

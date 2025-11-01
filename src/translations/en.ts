@@ -34,25 +34,19 @@ export const en = {
     payFor: 'Pay for',
     paymentFor: 'Payment for',
     instructionsTitle: 'Payment Instructions',
-    instructions: [
-        'Open the camera on your mobile phone.',
-        'Scan the QR code shown above.',
-        'Open the link that appears on your screen and complete the payment.',
-        {
-            caption: 'After payment, a notification will appear. Click the bell icon at the top of the page.',
-            src: 'https://i.imgur.com/your-image-1.png', // Placeholder for notification icon
-            alt: 'Notification Bell Icon'
-        },
-        {
-            caption: 'Find the purchase notification and click "Confirm" to confirm receipt of the service.',
-            src: 'https://i.imgur.com/your-image-2.png', // Placeholder for confirm button
-            alt: 'Confirm Button in Notification'
-        },
-        'A form will appear. Please fill in your details and click "Send to Telegram" to receive your product key.',
-    ],
-    deliveryTitle: 'Confirm Your Purchase',
-    deliverySubtitle: 'After paying, check your notifications (bell icon at the top) to confirm your purchase and get your key.',
-    contactButton: 'Check Notifications',
+    payment_instruction_step_1: 'Open the camera on your mobile phone.',
+    payment_instruction_alt_1: 'Illustrative image for step 1',
+    payment_instruction_step_2: 'Scan the QR code shown above.',
+    payment_instruction_alt_2: 'Illustrative image for step 2',
+    payment_instruction_step_3: 'Open the link that appears on your screen and complete the payment.',
+    payment_instruction_alt_3: 'Illustrative image for step 3',
+    payment_instruction_step_4: "After payment, press the 'I Have Paid' button below to confirm receipt of the service.",
+    payment_instruction_alt_4: 'Illustrative image for step 4',
+    payment_instruction_step_5: 'Fill out the form that appears and send the details via Telegram to receive your key.',
+    payment_instruction_alt_5: 'Illustrative image for step 5',
+    deliveryTitle: 'Final Step: Confirm Your Purchase',
+    deliverySubtitle: 'After paying, click the button below to open the form, send your details via Telegram, and receive your key.',
+    iHavePaidButton: 'I Have Paid',
     modalTitle: 'Submit Purchase Details',
     emailLabel: 'Purchase Email *',
     emailPlaceholder: 'example@email.com',

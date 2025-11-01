@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Shield, MessageCircle, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
-import Notifications from './Notifications';
 
 const Header = () => {
   const [clickCount, setClickCount] = useState(0);
@@ -50,15 +49,17 @@ const Header = () => {
             <MessageCircle className="w-4 h-4" />
             <span>Discord Server</span>
           </a>
-          <a 
-            href={loading ? '#' : settings.whatsapp_url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2 text-gray-300 hover:text-green-400 transition-colors duration-200 text-sm"
-          >
-            <Phone className="w-4 h-4" />
-            <span>WhatsApp</span>
-          </a>
+          {settings.show_all_whatsapp_buttons !== 'false' && (
+            <a 
+              href={loading ? '#' : settings.whatsapp_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-gray-300 hover:text-green-400 transition-colors duration-200 text-sm"
+            >
+              <Phone className="w-4 h-4" />
+              <span>WhatsApp</span>
+            </a>
+          )}
           <a 
             href={loading ? '#' : settings.telegram_url}
             target="_blank" 
@@ -83,7 +84,6 @@ const Header = () => {
                 {settings.site_name || 'Cheatloop'}
               </h1>
             </Link>
-            <Notifications />
           </div>
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-2 text-sm">

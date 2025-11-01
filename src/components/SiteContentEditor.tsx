@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save, UploadCloud, Image as ImageIcon, Heading1, Heading2, Type, Copyright, Shield, Target, Zap, RefreshCw, X } from 'lucide-react';
+import { Save, UploadCloud, Image as ImageIcon, Heading1, Heading2, Copyright, Shield, Target, Zap, RefreshCw, X, CreditCard, Trash2, BookText } from 'lucide-react';
 
 interface SiteContentEditorProps {
     settings: Record<string, string>;
@@ -55,10 +55,121 @@ const TextAreaField: React.FC<{ label: string; value: string; onChange: (e: Reac
     </div>
 );
 
+const ImageUploadField: React.FC<{
+    label: string;
+    settingKey: string;
+    settings: Record<string, string>;
+    onSettingsChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+    saving: boolean;
+    setSaving: (saving: boolean) => void;
+    setError: (error: string | null) => void;
+    setSuccess: (success: string | null) => void;
+}> = ({ label, settingKey, settings, onSettingsChange, saving, setSaving, setError, setSuccess }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            onSettingsChange(prev => ({ ...prev, [settingKey]: '' })); // Clear old URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) {
+            setError('Please select a file to upload.');
+            return;
+        }
+        if (!supabase) {
+            setError('Supabase client is not configured.');
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+        try {
+            const filePath = `site-asset-${settingKey}-${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+            const { error: uploadError } = await supabase.storage
+                .from('site-assets')
+                .upload(filePath, file);
+
+            if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('site-assets')
+                .getPublicUrl(filePath);
+
+            onSettingsChange(prev => ({ ...prev, [settingKey]: publicUrl }));
+            setSuccess(`Image for "${label}" uploaded. Remember to save all changes to apply.`);
+            setFile(null);
+            setPreview(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        } catch (err: any) {
+            setError(err.message || 'Failed to upload image.');
+        } finally {
+            setSaving(false);
+        }
+    };
+    
+    const handleRemove = () => {
+        onSettingsChange(prev => ({ ...prev, [settingKey]: '' }));
+        setFile(null);
+        setPreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        setSuccess(`Image for "${label}" removed. Remember to save all changes to apply.`);
+    };
+
+    return (
+         <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
+            <div className="flex items-center space-x-4">
+                <img
+                    src={preview || settings[settingKey] || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/150x100/1f2937/38bdf8?text=No+Image'}
+                    alt={`${label} Preview`}
+                    className="w-36 h-24 object-contain rounded-lg bg-slate-700 p-1 border border-slate-600"
+                />
+                <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                        <button type="button" onClick={() => fileInputRef.current?.click()} className="cursor-pointer flex items-center justify-center space-x-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-xl transition-colors text-sm">
+                            <UploadCloud className="w-4 h-4" />
+                            <span>Choose Image</span>
+                        </button>
+                        {(settings[settingKey] || preview) && (
+                            <button type="button" onClick={handleRemove} className="flex items-center space-x-2 px-4 py-2 bg-red-900/50 hover:bg-red-900/80 text-red-300 rounded-xl transition-colors text-sm">
+                                <Trash2 className="w-4 h-4" />
+                                <span>Remove</span>
+                            </button>
+                        )}
+                    </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                    {file && (
+                        <div className="mt-2 flex items-center space-x-3">
+                            <p className="text-sm text-gray-400 truncate w-40">{file.name}</p>
+                            <button onClick={handleUpload} disabled={saving} className="flex items-center space-x-2 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm disabled:opacity-50">
+                                {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <span>Upload</span>}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const SiteContentEditor: React.FC<SiteContentEditorProps> = ({ settings, onSettingsChange, onSave, saving, setSaving, setError, setSuccess }) => {
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [showLogoLibrary, setShowLogoLibrary] = useState(false);
+    const [contentLang, setContentLang] = useState<'en' | 'ar' | 'tr'>('ar');
 
     const handleSettingChange = (key: string, value: string) => {
         onSettingsChange(prev => ({ ...prev, [key]: value }));
@@ -122,6 +233,20 @@ const SiteContentEditor: React.FC<SiteContentEditorProps> = ({ settings, onSetti
         setTimeout(() => setSuccess(null), 3000);
     };
 
+    const LangTabButton = ({ lang, label }: { lang: 'en' | 'ar' | 'tr', label: string }) => (
+        <button
+            type="button"
+            onClick={() => setContentLang(lang)}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                contentLang === lang
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
     return (
         <div className="space-y-8">
             <SectionWrapper title="Header & Logo" icon={ImageIcon}>
@@ -135,7 +260,7 @@ const SiteContentEditor: React.FC<SiteContentEditorProps> = ({ settings, onSetti
                     <label className="block text-sm font-medium text-gray-300 mb-2">Site Logo</label>
                     <div className="flex items-center space-x-6">
                         <img
-                            src={logoPreview || settings.site_logo_url || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=Logo'}
+                            src={logoPreview || settings.site_logo_url || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=Logo'}
                             alt="Site Logo Preview"
                             className="w-20 h-20 object-contain rounded-lg bg-slate-700 p-2 border border-slate-600"
                         />
@@ -199,6 +324,82 @@ const SiteContentEditor: React.FC<SiteContentEditorProps> = ({ settings, onSetti
                         <InputField label="Title" value={settings.feature_3_title || ''} onChange={(e) => handleSettingChange('feature_3_title', e.target.value)} />
                         <InputField label="Description" value={settings.feature_3_desc || ''} onChange={(e) => handleSettingChange('feature_3_desc', e.target.value)} />
                     </div>
+                </div>
+            </SectionWrapper>
+            
+            <SectionWrapper title="Payment Instructions" icon={CreditCard}>
+                <div className="space-y-6">
+                    <h4 className="text-lg font-semibold text-cyan-300 border-b border-slate-600 pb-2 flex items-center space-x-2"><BookText size={20} /><span>Instruction Text</span></h4>
+                    <div className="flex space-x-2 pb-4">
+                        <LangTabButton lang="en" label="English" />
+                        <LangTabButton lang="ar" label="العربية" />
+                        <LangTabButton lang="tr" label="Türkçe" />
+                    </div>
+                    
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <TextAreaField
+                            key={`payment_instruction_step_${i + 1}_${contentLang}`}
+                            label={`Instruction Step ${i + 1} (${contentLang.toUpperCase()})`}
+                            value={settings[`payment_instruction_step_${i + 1}_${contentLang}`] || ''}
+                            onChange={(e) => handleSettingChange(`payment_instruction_step_${i + 1}_${contentLang}`, e.target.value)}
+                            placeholder={`Enter text for step ${i + 1}...`}
+                            rows={2}
+                        />
+                    ))}
+                </div>
+
+                <div className="space-y-6 pt-6 border-t border-slate-700">
+                    <h4 className="text-lg font-semibold text-cyan-300 border-b border-slate-600 pb-2 flex items-center space-x-2"><ImageIcon size={20} /><span>Instruction Images</span></h4>
+                    <ImageUploadField
+                        label="Instruction Image - Step 1"
+                        settingKey="payment_instruction_image_1"
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
+                        saving={saving}
+                        setSaving={setSaving}
+                        setError={setError}
+                        setSuccess={setSuccess}
+                    />
+                    <ImageUploadField
+                        label="Instruction Image - Step 2"
+                        settingKey="payment_instruction_image_2"
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
+                        saving={saving}
+                        setSaving={setSaving}
+                        setError={setError}
+                        setSuccess={setSuccess}
+                    />
+                    <ImageUploadField
+                        label="Instruction Image - Step 3"
+                        settingKey="payment_instruction_image_3"
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
+                        saving={saving}
+                        setSaving={setSaving}
+                        setError={setError}
+                        setSuccess={setSuccess}
+                    />
+                    <ImageUploadField
+                        label="Instruction Image - Step 4"
+                        settingKey="payment_instruction_image_4"
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
+                        saving={saving}
+                        setSaving={setSaving}
+                        setError={setError}
+                        setSuccess={setSuccess}
+                    />
+                    <ImageUploadField
+                        label="Instruction Image - Step 5"
+                        settingKey="payment_instruction_image_5"
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
+                        saving={saving}
+                        setSaving={setSaving}
+                        setError={setError}
+                        setSuccess={setSuccess}
+                    />
                 </div>
             </SectionWrapper>
 

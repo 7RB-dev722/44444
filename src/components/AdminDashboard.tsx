@@ -3,6 +3,8 @@ import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, Ale
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -831,8 +833,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     <input type="url" value={settings.whatsapp_url || ''} onChange={(e) => setSettings({...settings, whatsapp_url: e.target.value})} className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="https://api.whatsapp.com/send?phone=..."/>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Telegram URL</label>
-                    <input type="url" value={settings.telegram_url || ''} onChange={(e) => setSettings({...settings, telegram_url: e.target.value})} className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="https://t.me/..."/>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Telegram Contact URL</label>
+                    <input type="url" value={settings.telegram_url || ''} onChange={(e) => setSettings({...settings, telegram_url: e.target.value})} className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="https.me/..."/>
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Telegram Purchase URL</label>
+                    <input type="url" value={settings.telegram_purchase_url || ''} onChange={(e) => setSettings({...settings, telegram_purchase_url: e.target.value})} className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500" placeholder="https.me/..."/>
+                     <p className="text-xs text-gray-400 mt-2">Used for the 'I Have Paid' confirmation. If empty, the main Telegram Contact URL will be used.</p>
                   </div>
                 </div>
               </div>
@@ -841,6 +848,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center space-x-2"><Package className="w-5 h-5 text-purple-400"/><span>Product Card Display</span></h2>
                 <div className="space-y-6">
                     <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Card Display Size</label>
+                        <RadioGroup
+                            value={settings.product_card_size || 'default'}
+                            onValueChange={(value) => setSettings({ ...settings, product_card_size: value })}
+                            className="flex space-x-4"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="compact" id="size-compact" />
+                                <Label htmlFor="size-compact" className="text-gray-300">Compact</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="default" id="size-default" />
+                                <Label htmlFor="size-default" className="text-gray-300">Default</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="large" id="size-large" />
+                                <Label htmlFor="size-large" className="text-gray-300">Large</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                    <div className="border-t border-slate-700 pt-6">
                         <label className="block text-sm font-medium text-gray-300 mb-2">Important Note Text</label>
                         <textarea
                             value={settings.product_card_note || ''}
@@ -851,6 +879,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         />
                     </div>
                     <ToggleSwitch
+                        label="Show Important Note in Card"
+                        enabled={settings.show_product_card_note !== 'false'}
+                        onChange={(enabled) => setSettings({...settings, show_product_card_note: String(enabled)})}
+                    />
+                    <ToggleSwitch
                         label="Show WhatsApp Button in Card"
                         enabled={settings.show_whatsapp_button === 'true'}
                         onChange={(enabled) => setSettings({...settings, show_whatsapp_button: String(enabled)})}
@@ -859,6 +892,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         label="Show Telegram Button in Card"
                         enabled={settings.show_telegram_button === 'true'}
                         onChange={(enabled) => setSettings({...settings, show_telegram_button: String(enabled)})}
+                    />
+                    <ToggleSwitch
+                        label="Show All WhatsApp Buttons Site-Wide"
+                        enabled={settings.show_all_whatsapp_buttons !== 'false'}
+                        onChange={(enabled) => setSettings({...settings, show_all_whatsapp_buttons: String(enabled)})}
                     />
                 </div>
               </div>

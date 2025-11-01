@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { GamingProductCard } from './GamingProductCard';
 import { productService, categoryService, Product, Category } from '../lib/supabase';
+import { useSettings } from '../contexts/SettingsContext';
 
 export const ProductsGrid: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { settings } = useSettings();
 
   useEffect(() => {
     loadData();
@@ -40,6 +42,19 @@ export const ProductsGrid: React.FC = () => {
 
   const getProductsByCategory = (categoryId: string) => {
     return products.filter(product => product.category_id === categoryId);
+  };
+  
+  const getGridColsClass = () => {
+    const size = settings.product_card_size || 'default';
+    switch (size) {
+      case 'compact':
+        return 'lg:grid-cols-4';
+      case 'large':
+        return 'lg:grid-cols-2';
+      case 'default':
+      default:
+        return 'lg:grid-cols-3';
+    }
   };
 
   if (loading) {
@@ -135,7 +150,7 @@ export const ProductsGrid: React.FC = () => {
                 <div className="w-24 h-1 bg-gradient-to-r from-cyan-400 to-purple-400 mx-auto rounded-full"></div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColsClass()} gap-8`}>
                 {categoryProducts.map((product, productIndex) => (
                   <div 
                     key={product.id} 

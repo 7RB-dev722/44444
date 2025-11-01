@@ -66,15 +66,17 @@ const Footer = () => {
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-sm">Discord Server</span>
               </a>
-              <a 
-                href={loading ? '#' : settings.whatsapp_url}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-green-400 transition-colors duration-200"
-              >
-                <Phone className="w-4 h-4" />
-                <span className="text-sm">WhatsApp</span>
-              </a>
+              {settings.show_all_whatsapp_buttons !== 'false' && (
+                <a 
+                  href={loading ? '#' : settings.whatsapp_url}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 text-gray-300 hover:text-green-400 transition-colors duration-200"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span className="text-sm">WhatsApp</span>
+                </a>
+              )}
               <a 
                 href={loading ? '#' : settings.telegram_url}
                 target="_blank" 

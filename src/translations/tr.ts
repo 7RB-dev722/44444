@@ -34,25 +34,19 @@ export const tr = {
     payFor: 'Şunun için öde',
     paymentFor: 'Ödeme',
     instructionsTitle: 'Ödeme Talimatları',
-    instructions: [
-        'Cep telefonunuzda kamerayı açın.',
-        'Yukarıda gösterilen QR kodunu tarayın.',
-        'Ekranınızda görünen bağlantıyı açın ve ödemeyi tamamlayın.',
-        {
-            caption: 'Ödemeden sonra bir bildirim görünecektir. Sayfanın üst kısmındaki zil simgesine tıklayın.',
-            src: 'https://i.imgur.com/your-image-1.png', // Placeholder for notification icon
-            alt: 'Bildirim Zili Simgesi'
-        },
-        {
-            caption: 'Satın alma bildirimini bulun ve hizmetin alındığını onaylamak için "Onayla" düğmesine tıklayın.',
-            src: 'https://i.imgur.com/your-image-2.png', // Placeholder for confirm button
-            alt: 'Bildirimdeki Onay Düğmesi'
-        },
-        'Bir form görünecektir. Lütfen bilgilerinizi doldurun ve ürün anahtarınızı almak için "Telegram\'a Gönder"e tıklayın.',
-    ],
-    deliveryTitle: 'Satın Almanızı Onaylayın',
-    deliverySubtitle: 'Ödeme yaptıktan sonra, satın alma işleminizi onaylamak ve anahtarınızı almak için bildirimlerinizi (üstteki zil simgesi) kontrol edin.',
-    contactButton: 'Bildirimleri Kontrol Et',
+    payment_instruction_step_1: 'Cep telefonunuzdaki kamerayı açın.',
+    payment_instruction_alt_1: 'Adım 1 için açıklayıcı resim',
+    payment_instruction_step_2: 'Yukarıda gösterilen QR kodunu tarayın.',
+    payment_instruction_alt_2: 'Adım 2 için açıklayıcı resim',
+    payment_instruction_step_3: 'Ekranınızda görünen bağlantıyı açın ve ödemeyi tamamlayın.',
+    payment_instruction_alt_3: 'Adım 3 için açıklayıcı resim',
+    payment_instruction_step_4: "Ödeme yaptıktan sonra, hizmetin alındığını onaylamak için aşağıdaki 'Ödedim' düğmesine basın.",
+    payment_instruction_alt_4: 'Adım 4 için açıklayıcı resim',
+    payment_instruction_step_5: 'Görünen formu doldurun ve anahtarınızı almak için bilgileri Telegram üzerinden gönderin.',
+    payment_instruction_alt_5: 'Adım 5 için açıklayıcı resim',
+    deliveryTitle: 'Son Adım: Satın Almanızı Onaylayın',
+    deliverySubtitle: 'Ödeme yaptıktan sonra, formu açmak, bilgilerinizi Telegram üzerinden göndermek ve anahtarınızı almak için aşağıdaki düğmeye tıklayın.',
+    iHavePaidButton: 'Ödedim',
     modalTitle: 'Satın Alma Detaylarını Gönder',
     emailLabel: 'Satın Alma E-postası *',
     emailPlaceholder: 'ornek@eposta.com',

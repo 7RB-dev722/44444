@@ -34,25 +34,19 @@ export const ar = {
     payFor: 'الدفع مقابل',
     paymentFor: 'الدفع مقابل',
     instructionsTitle: 'تعليمات الدفع',
-    instructions: [
-        'افتح الكاميرا على هاتفك المحمول.',
-        'امسح رمز الاستجابة السريعة (QR) الظاهر أعلاه.',
-        'افتح الرابط الذي يظهر على شاشتك وأكمل عملية الدفع.',
-        {
-            caption: 'بعد الدفع، سيظهر إشعار. اضغط على أيقونة الجرس في أعلى الصفحة.',
-            src: 'https://i.imgur.com/your-image-1.png', // Placeholder for notification icon
-            alt: 'أيقونة جرس الإشعارات'
-        },
-        {
-            caption: 'ابحث عن إشعار الشراء واضغط على "تأكيد" لتأكيد استلام الخدمة.',
-            src: 'https://i.imgur.com/your-image-2.png', // Placeholder for confirm button
-            alt: 'زر التأكيد في الإشعار'
-        },
-        'ستظهر لك نافذة. يرجى ملء تفاصيلك والضغط على "إرسال إلى تيليجرام" لاستلام مفتاح المنتج الخاص بك.',
-    ],
-    deliveryTitle: 'أكّد عملية الشراء',
-    deliverySubtitle: 'بعد الدفع، تحقق من إشعاراتك (أيقونة الجرس في الأعلى) لتأكيد عملية الشراء والحصول على مفتاحك.',
-    contactButton: 'تحقق من الإشعارات',
+    payment_instruction_step_1: 'افتح الكاميرا على هاتفك المحمول.',
+    payment_instruction_alt_1: 'صورة توضيحية للخطوة 1',
+    payment_instruction_step_2: 'قم بمسح رمز الاستجابة السريعة الموضح أعلاه.',
+    payment_instruction_alt_2: 'صورة توضيحية للخطوة 2',
+    payment_instruction_step_3: 'افتح الرابط الذي يظهر على شاشتك وأكمل عملية الدفع.',
+    payment_instruction_alt_3: 'صورة توضيحية للخطوة 3',
+    payment_instruction_step_4: 'بعد الدفع، اضغط على زر "لقد دفعت" في الأسفل لتأكيد استلام الخدمة.',
+    payment_instruction_alt_4: 'صورة توضيحية للخطوة 4',
+    payment_instruction_step_5: 'املأ النموذج الذي سيظهر لك وأرسل التفاصيل عبر تيليجرام لتلقي مفتاحك.',
+    payment_instruction_alt_5: 'صورة توضيحية للخطوة 5',
+    deliveryTitle: 'الخطوة الأخيرة: تأكيد الدفع',
+    deliverySubtitle: 'بعد إتمام الدفع، اضغط على الزر أدناه لفتح نموذج إرسال التفاصيل عبر تيليجرام واستلام مفتاحك.',
+    iHavePaidButton: 'لقد دفعت',
     modalTitle: 'إرسال تفاصيل الشراء',
     emailLabel: 'البريد الإلكتروني للشراء *',
     emailPlaceholder: 'example@email.com',
