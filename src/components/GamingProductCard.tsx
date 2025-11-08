@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Target, Zap, Shield, MessageCircle, Phone, Star, Crown, Gem, Image as ImageIcon, PlayCircle, QrCode } from 'lucide-react';
+import { Eye, Target, Zap, Shield, MessageCircle, Phone, Star, Crown, Gem, Image as ImageIcon, PlayCircle, QrCode, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from '@/lib/utils';
@@ -167,7 +167,15 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
     );
 
     const isCodmProduct = title.toLowerCase().includes('codm') || title.toLowerCase().includes('call of duty');
-    const destination = buyLink ? buyLink : (id && purchase_image_id ? `/pay/${id}` : null);
+    
+    let destination: string | null = null;
+    if (id) {
+        if (purchase_image_id) {
+            destination = `/pay/${id}`;
+        } else if (buyLink) {
+            destination = `/link-pay/${id}`;
+        }
+    }
     
     if (!id || !destination) {
       return (
@@ -182,8 +190,17 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
 
     return (
       <Link to={finalUrl} className={commonClasses}>
-        {purchase_image_id && <QrCode className="w-5 h-5" />}
-        <span>{purchase_image_id ? 'Pay with QR' : 'Buy Now'}</span>
+        {purchase_image_id ? (
+            <>
+                <QrCode className="w-5 h-5" />
+                <span>Pay with QR</span>
+            </>
+        ) : (
+            <>
+                <ExternalLink className="w-5 h-5" />
+                <span>Buy Now</span>
+            </>
+        )}
       </Link>
     );
   };

@@ -57,4 +57,6 @@ export const ar = {
     formError: 'يرجى تقديم عنوان بريد إلكتروني صالح.',
     errorLoadingImage: 'لا يمكن تحميل صورة الدفع.',
     backToHome: 'العودة إلى الرئيسية',
+    proceedToPaymentLink: 'الانتقال إلى رابط الدفع',
+    redirectMessage: 'سيتم توجيهك إلى موقع خارجي لإتمام عملية الشراء.',
 };

@@ -57,4 +57,6 @@ export const tr = {
     formError: 'Lütfen geçerli bir e-posta adresi girin.',
     errorLoadingImage: 'Ödeme resmi yüklenemedi.',
     backToHome: 'Ana Sayfaya Dön',
+    proceedToPaymentLink: 'Ödeme Bağlantısına Git',
+    redirectMessage: 'Satın alma işleminizi tamamlamak için harici bir siteye yönlendirileceksiniz.',
 };

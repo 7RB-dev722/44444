@@ -57,6 +57,8 @@ export const en = {
     formError: 'Please provide a valid email address.',
     errorLoadingImage: 'Could not load payment image.',
     backToHome: 'Back to Home',
+    proceedToPaymentLink: 'Proceed to Payment Link',
+    redirectMessage: 'You will be redirected to an external site to complete your purchase.',
 };
 
 export type Translations = typeof en;

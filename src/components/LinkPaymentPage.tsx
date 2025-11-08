@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { productService, purchaseImagesService, Product, PurchaseImage } from '../lib/supabase';
+import { productService, Product } from '../lib/supabase';
 import { useSettings } from '../contexts/SettingsContext';
 import { AnimatedBackground } from './AnimatedBackground';
-import { Home, AlertTriangle, Camera, Send, X } from 'lucide-react';
+import { Home, AlertTriangle, Camera, Send, X, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import PurchaseDetailsModal from './PurchaseDetailsModal';
 import { Translations } from '../translations/en';
 
 type Lang = 'en' | 'ar' | 'tr';
 
-const ImagePaymentPage: React.FC = () => {
+const LinkPaymentPage: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
     const [product, setProduct] = useState<Product | null>(null);
-    const [purchaseImage, setPurchaseImage] = useState<PurchaseImage | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { settings, loading: settingsLoading } = useSettings();
@@ -29,11 +28,8 @@ const ImagePaymentPage: React.FC = () => {
                     const productData = await productService.getProductById(productId);
                     setProduct(productData);
 
-                    if (!productData.purchase_image_id) {
-                        setError("Image-based payment is not available for this product.");
-                    } else {
-                        const imageData = await purchaseImagesService.getById(productData.purchase_image_id);
-                        setPurchaseImage(imageData);
+                    if (!productData.buy_link) {
+                        setError("Link-based payment is not available for this product.");
                     }
                 } catch (err: any) {
                     setError(err.message || 'Failed to load payment details.');
@@ -118,7 +114,7 @@ const ImagePaymentPage: React.FC = () => {
         );
     }
 
-    if (error || !purchaseImage) {
+    if (error || !product) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative">
                 <AnimatedBackground />
@@ -126,7 +122,7 @@ const ImagePaymentPage: React.FC = () => {
                     <div className="text-center bg-red-500/10 border border-red-500/20 p-8 rounded-2xl max-w-lg">
                         <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                         <h2 className="text-2xl font-bold text-white mb-2">{t.errorTitle}</h2>
-                        <p className="text-red-300 mb-6">{error || t.errorLoadingImage}</p>
+                        <p className="text-red-300 mb-6">{error || "Product not found."}</p>
                         <Link to="/" className="inline-flex items-center space-x-2 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl transition-colors">
                             <Home className="w-5 h-5" />
                             <span>{t.backToHome}</span>
@@ -135,10 +131,6 @@ const ImagePaymentPage: React.FC = () => {
                 </div>
             </div>
         );
-    }
-
-    if (!product) {
-        return null;
     }
 
     return (
@@ -159,17 +151,17 @@ const ImagePaymentPage: React.FC = () => {
                         <p className="text-2xl font-bold text-cyan-300">${product.price}</p>
                     </div>
 
-                    <div className="mb-8">
-                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-600 flex justify-center">
-                            <div className="relative">
-                                <img 
-                                    src={purchaseImage.image_url} 
-                                    alt={`${t.paymentFor} ${product.title}`} 
-                                    className="rounded-lg max-w-xs w-full cursor-pointer hover:opacity-80 transition-opacity"
-                                    onClick={() => openLightbox(purchaseImage.image_url)}
-                                />
-                            </div>
-                        </div>
+                    <div className="mb-8 text-center">
+                        <a 
+                            href={product.buy_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center space-x-3 rtl:space-x-reverse bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold px-8 py-4 rounded-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                            <span>{t.proceedToPaymentLink}</span>
+                            <ExternalLink className="w-6 h-6" />
+                        </a>
+                        <p className="text-sm text-gray-400 mt-3">{t.redirectMessage}</p>
                     </div>
 
                     <div className="space-y-6">
@@ -259,4 +251,4 @@ const ImagePaymentPage: React.FC = () => {
     );
 };
 
-export default ImagePaymentPage;
+export default LinkPaymentPage;

@@ -20,7 +20,7 @@ export const ProductsGrid: React.FC = () => {
       setError(null);
       
       const [allProducts, allCategories] = await Promise.all([
-        productService.getVisibleProducts(), // Fetch only visible products
+        productService.getVisibleProducts(),
         categoryService.getAllCategories()
       ]);
       
@@ -28,16 +28,10 @@ export const ProductsGrid: React.FC = () => {
       setCategories(allCategories);
     } catch (err: any) {
       console.error('Error loading data:', err);
-      setError('Failed to load products from the database. Displaying fallback data.');
-      loadFallbackData();
+      setError(err.message || 'Failed to load data from the database.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadFallbackData = () => {
-    // This function can be expanded with hardcoded data if needed
-    console.warn("Loading fallback data as primary data source failed.");
   };
 
   const getProductsByCategory = (categoryId: string) => {
@@ -105,7 +99,7 @@ export const ProductsGrid: React.FC = () => {
       <div className="container mx-auto px-6 relative z-10">
         {error && (
           <div className="text-center mb-8">
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 p-4 rounded-xl mb-6 max-w-2xl mx-auto">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl mb-6 max-w-2xl mx-auto">
               <p>{error}</p>
             </div>
           </div>
