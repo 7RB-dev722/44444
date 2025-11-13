@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail } from 'lucide-react';
+import ReactDOMServer from 'react-dom/server';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
+import { useSettings } from '../contexts/SettingsContext';
+import InvoiceTemplate from './InvoiceTemplate';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -100,6 +103,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [winningPhotos, setWinningPhotos] = useState<WinningPhoto[]>([]);
   const [purchaseImages, setPurchaseImages] = useState<PurchaseImage[]>([]);
   const [purchaseIntents, setPurchaseIntents] = useState<PurchaseIntent[]>([]);
+  const { settings: siteSettings, loading: settingsLoading } = useSettings();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -121,6 +125,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [invoiceModalIntent, setInvoiceModalIntent] = useState<PurchaseIntent | null>(null);
   const [productKey, setProductKey] = useState('');
   const [selectedPurchaseIntents, setSelectedPurchaseIntents] = useState<string[]>([]);
+  const [showPrintOptions, setShowPrintOptions] = useState(false);
 
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'created_at' | 'updated_at'>>({
@@ -135,11 +140,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const winningPhotoFileInputRef = useRef<HTMLInputElement>(null);
   const productImageInputRef = useRef<HTMLInputElement>(null);
   const purchaseImageFileInputRef = useRef<HTMLInputElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
 
   useEffect(() => {
     checkConnection();
   }, []);
+
+  useEffect(() => {
+    if (!settingsLoading) {
+      setSettings(siteSettings);
+    }
+  }, [siteSettings, settingsLoading]);
 
   const checkConnection = async () => {
     try {
@@ -637,6 +649,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     return acc;
   }, {} as Record<string, WinningPhoto[]>);
 
+  const getProductForIntent = (intent: PurchaseIntent | null) => {
+    if (!intent) return undefined;
+    return products.find(p => p.id === intent.product_id);
+  };
+
+  const generateInvoiceHTML = (intent: PurchaseIntent, key: string) => {
+      if (!intent) return '';
+      const productForIntent = getProductForIntent(intent);
+      const html = ReactDOMServer.renderToStaticMarkup(
+          <InvoiceTemplate
+              intent={intent}
+              productKey={key}
+              siteSettings={siteSettings}
+              productPrice={productForIntent ? productForIntent.price : 'N/A'}
+          />
+      );
+      return `<!DOCTYPE html>${html}`;
+  };
+
+  const handleInternalPrint = () => {
+    if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.print();
+    } else {
+        setError("Could not access the invoice content for printing.");
+    }
+    setShowPrintOptions(false);
+  };
+
+  const handleExternalPrint = () => {
+      if (!invoiceModalIntent || !productKey) {
+          setError("Please enter a product key first.");
+          return;
+      }
+      const invoiceHTML = generateInvoiceHTML(invoiceModalIntent, productKey);
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+          printWindow.document.write(invoiceHTML);
+          printWindow.document.close();
+          printWindow.focus();
+      } else {
+          setError("Could not open new window. Please check your browser's popup blocker settings.");
+      }
+      setShowPrintOptions(false);
+  };
+
   const TabButton = ({ tab, label, icon: Icon }: { tab: AdminTab; label: string; icon: React.ElementType }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -1024,7 +1081,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           {activeTab === 'products' && (
             <div>
               <div className="flex justify-end mb-6">
-                <button onClick={() => setIsAddingProduct(true)} className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white px-4 py-2 rounded-xl transition-all duration-300"><Plus className="w-5 h-5" /><span>Add Product</span></button>
+                <button onClick={() => setIsAddingProduct(true)} className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-600 text-white px-4 py-2 rounded-xl transition-all duration-300"><Plus className="w-5 h-5" /><span>Add Product</span></button>
               </div>
               {(isAddingProduct || editingProduct) && (
                 <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 mb-8">
@@ -1072,7 +1129,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -1199,82 +1256,151 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {invoiceModalIntent && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 max-w-2xl w-full animate-fade-in-up">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-white">Send Invoice</h3>
-              <button onClick={() => setInvoiceModalIntent(null)} className="p-2 text-gray-400 hover:text-white rounded-full">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Left side: Details and Key Input */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">Purchase Details</h4>
-                <p><strong className="text-gray-400">Product:</strong> {invoiceModalIntent.product_title}</p>
-                <p><strong className="text-gray-400">Country:</strong> {invoiceModalIntent.country}</p>
-                <p><strong className="text-gray-400">Email:</strong> {invoiceModalIntent.email}</p>
-                <p><strong className="text-gray-400">Phone:</strong> {invoiceModalIntent.phone_number}</p>
+      {invoiceModalIntent && (() => {
+        const productForIntent = getProductForIntent(invoiceModalIntent);
+        
+        const invoiceBodyEn = `
+Hello,
 
-                <div className="pt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Product Key *</label>
-                  <input 
-                    type="text" 
-                    value={productKey} 
-                    onChange={(e) => setProductKey(e.target.value)} 
-                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                    placeholder="Enter the product key"
-                  />
+Thank you for your purchase!
+
+Here are your invoice details:
+--------------------------------
+Product: ${invoiceModalIntent.product_title}
+Price: $${productForIntent?.price || 'N/A'}
+Date: ${new Date(invoiceModalIntent.created_at).toLocaleDateString()}
+
+Your Product Key:
+${productKey}
+--------------------------------
+
+If you have any questions, please contact support.
+
+Best regards,
+The ${siteSettings.site_name || 'Cheatloop'} Team
+`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${invoiceModalIntent.email}&su=${encodeURIComponent(`Your invoice and product key for ${invoiceModalIntent.product_title}`)}&body=${encodeURIComponent(invoiceBodyEn)}`;
+        const whatsappPhoneNumber = invoiceModalIntent.phone_number?.replace(/\D/g, '') || '';
+        const whatsappUrl = `https://wa.me/${whatsappPhoneNumber}?text=${encodeURIComponent(invoiceBodyEn)}`;
+
+        return (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 max-w-4xl w-full animate-fade-in-up">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-white">إرسال الفاتورة</h3>
+                  <button onClick={() => setInvoiceModalIntent(null)} className="p-2 text-gray-400 hover:text-white rounded-full">
+                    <X className="w-6 h-6" />
+                  </button>
                 </div>
-              </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">تفاصيل الشراء</h4>
+                    <p><strong className="text-gray-400">المنتج:</strong> {invoiceModalIntent.product_title}</p>
+                    <p><strong className="text-gray-400">السعر:</strong> ${productForIntent?.price || 'N/A'}</p>
+                    <p><strong className="text-gray-400">الدولة:</strong> {invoiceModalIntent.country}</p>
+                    <p><strong className="text-gray-400">البريد الإلكتروني:</strong> {invoiceModalIntent.email}</p>
+                    <p><strong className="text-gray-400">الهاتف:</strong> {invoiceModalIntent.phone_number}</p>
 
-              {/* Right side: Invoice Preview */}
-              <div>
-                <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">Invoice Preview</h4>
-                <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 text-sm text-gray-300 whitespace-pre-wrap font-mono h-64 overflow-y-auto">
-                  {`Product: ${invoiceModalIntent.product_title}
-Country: ${invoiceModalIntent.country}
-Email: ${invoiceModalIntent.email}
-Phone: ${invoiceModalIntent.phone_number}
-Product Key: ${productKey || '[Enter key to generate]'}`}
+                    <div className="pt-4">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">مفتاح المنتج *</label>
+                      <input 
+                        type="text" 
+                        value={productKey} 
+                        onChange={(e) => setProductKey(e.target.value)} 
+                        className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                        placeholder="أدخل مفتاح المنتج"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">معاينة الفاتورة</h4>
+                    <iframe
+                      ref={iframeRef}
+                      srcDoc={generateInvoiceHTML(invoiceModalIntent, productKey)}
+                      className="mt-4 w-full h-80 bg-slate-900 rounded-lg border border-slate-700"
+                      title="Invoice Preview"
+                    />
+                  </div>
                 </div>
+                
+                <div className="mt-8 pt-6 border-t border-slate-700">
+                    <div className="flex justify-end gap-4 flex-wrap">
+                      <button onClick={() => setInvoiceModalIntent(null)} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">إلغاء</button>
+                      
+                      <button
+                        onClick={() => {
+                            if (!productKey) {
+                                setError("يرجى إدخال مفتاح المنتج أولاً.");
+                                return;
+                            }
+                            setShowPrintOptions(true);
+                        }}
+                        disabled={!productKey}
+                        className={`px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <Printer className="w-4 h-4" />
+                        <span>طباعة / PDF</span>
+                      </button>
+
+                      <a
+                        href={!productKey ? undefined : whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!productKey) e.preventDefault(); }}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>إرسال عبر WhatsApp</span>
+                      </a>
+
+                      <a
+                        href={!productKey ? undefined : gmailUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!productKey) e.preventDefault(); }}
+                      >
+                        <Mail className="w-4 h-4" />
+                        <span>إرسال عبر Gmail</span>
+                      </a>
+                    </div>
+                </div>
+
               </div>
+              {showPrintOptions && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 w-full max-w-md shadow-2xl shadow-purple-500/10">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-white">خيارات الطباعة</h3>
+                            <button onClick={() => setShowPrintOptions(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <p className="text-gray-400 mb-6">اختر طريقة الطباعة المفضلة. يمكنك أيضًا استخدام خيار الطباعة لحفظ الفاتورة كملف PDF.</p>
+                        <div className="space-y-4">
+                            <button
+                                onClick={handleInternalPrint}
+                                className="w-full flex items-center justify-center space-x-3 rtl:space-x-reverse bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-6 py-4 rounded-xl transition-colors"
+                            >
+                                <Printer className="w-5 h-5"/>
+                                <span>طباعة داخلية (سريع)</span>
+                            </button>
+                            <button
+                                onClick={handleExternalPrint}
+                                className="w-full flex items-center justify-center space-x-3 rtl:space-x-reverse bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-4 rounded-xl transition-colors"
+                            >
+                                <ExternalLink className="w-5 h-5"/>
+                                <span>طباعة خارجية (فتح في نافذة جديدة)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+              )}
             </div>
-
-            <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-700">
-              <button onClick={() => setInvoiceModalIntent(null)} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">Cancel</button>
-              
-              <a
-                href={!productKey ? undefined : `https://mail.google.com/mail/?view=cm&fs=1&to=${invoiceModalIntent.email}&su=${encodeURIComponent(`Your Product Key for ${invoiceModalIntent.product_title}`)}&body=${encodeURIComponent(`Product: ${invoiceModalIntent.product_title}\nCountry: ${invoiceModalIntent.country}\nEmail: ${invoiceModalIntent.email}\nPhone: ${invoiceModalIntent.phone_number}\nProduct Key: ${productKey}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={(e) => { if (!productKey) e.preventDefault(); }}
-              >
-                <Mail className="w-4 h-4" />
-                <span>Send via Email</span>
-              </a>
-
-              <button 
-                onClick={() => {
-                  const message = `Product: ${invoiceModalIntent.product_title}\nCountry: ${invoiceModalIntent.country}\nEmail: ${invoiceModalIntent.email}\nPhone: ${invoiceModalIntent.phone_number}\nProduct Key: ${productKey}`;
-                  const phoneNumber = invoiceModalIntent.phone_number.replace(/\D/g, '');
-                  const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                  window.open(url, '_blank');
-                  setInvoiceModalIntent(null);
-                }} 
-                disabled={!productKey} 
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors flex items-center space-x-2"
-              >
-                <Send className="w-4 h-4" />
-                <span>Send to WhatsApp</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
