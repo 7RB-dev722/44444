@@ -13,7 +13,7 @@ export const ar = {
     igpuYes: "نعم",
     igpuNo: "لا",
     checkButton: "فحص التوافق",
-    fillAllFields: "يرجى ملء جميع الحقول لفحص التوافق.",
+    fillAllFields: "يرجى ملء جميع الحقول.",
     compatibleTitle: "متوافق!",
     compatibleMessage: "هذا المنتج يعمل بشكل مثالي مع مواصفات جهازك.",
     proceedButton: "متابعة للشراء",
@@ -29,6 +29,18 @@ export const ar = {
     errorTitle: "حدث خطأ",
     checkingFor: "جاري فحص التوافق لـ:",
     backToProducts: "العودة إلى كل المنتجات",
+
+    // Pre-Purchase
+    prePurchaseTitle: "معلومات ما قبل الشراء",
+    prePurchaseSubtitle: "يرجى تقديم التفاصيل الخاصة بك للمتابعة.",
+    countryLabel: "الدولة",
+    countryPlaceholder: "اختر دولتك",
+    emailLabel: 'البريد الإلكتروني *',
+    emailPlaceholder: 'example@email.com',
+    phoneLabel: "رقم الهاتف",
+    phonePlaceholder: "أدخل رقم هاتفك",
+    proceedToPurchaseButton: "متابعة الشراء",
+    savingInfo: "جاري حفظ معلوماتك...",
 
     // Payment
     payFor: 'الدفع مقابل',
@@ -48,10 +60,6 @@ export const ar = {
     deliverySubtitle: 'بعد إتمام الدفع، اضغط على الزر أدناه لفتح نموذج إرسال التفاصيل عبر تيليجرام واستلام مفتاحك.',
     iHavePaidButton: 'لقد دفعت',
     modalTitle: 'إرسال تفاصيل الشراء',
-    emailLabel: 'البريد الإلكتروني للشراء *',
-    emailPlaceholder: 'example@email.com',
-    phoneLabel: 'رقم الهاتف (اختياري)',
-    phonePlaceholder: 'مثال: +9641234567890',
     anydeskLabel: 'معرف AnyDesk (اختياري)',
     modalSubmitButton: 'إرسال إلى تيليجرام',
     formError: 'يرجى تقديم عنوان بريد إلكتروني صالح.',

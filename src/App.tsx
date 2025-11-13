@@ -12,6 +12,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import ImagePaymentPage from './components/ImagePaymentPage';
 import LinkPaymentPage from './components/LinkPaymentPage';
 import CompatibilityCheckPage from './components/CompatibilityCheckPage';
+import PrePurchaseInfoPage from './components/PrePurchaseInfoPage';
 
 function HomePage() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path="/pay/:productId" element={<ImagePaymentPage />} />
             <Route path="/link-pay/:productId" element={<LinkPaymentPage />} />
             <Route path="/check-compatibility/:productId" element={<CompatibilityCheckPage />} />
+            <Route path="/pre-purchase/:productId" element={<PrePurchaseInfoPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

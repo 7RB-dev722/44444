@@ -166,18 +166,7 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
       'hover:shadow-lg hover:shadow-current/25'
     );
 
-    const isCodmProduct = title.toLowerCase().includes('codm') || title.toLowerCase().includes('call of duty');
-    
-    let destination: string | null = null;
-    if (id) {
-        if (purchase_image_id) {
-            destination = `/pay/${id}`;
-        } else if (buyLink) {
-            destination = `/link-pay/${id}`;
-        }
-    }
-    
-    if (!id || !destination) {
+    if (!id) {
       return (
         <button disabled className="w-full py-4 px-6 rounded-xl font-bold text-gray-400 bg-gray-600 cursor-not-allowed opacity-50">
           Coming Soon
@@ -185,22 +174,11 @@ export const GamingProductCard: React.FC<GamingProductCardProps> = ({
       );
     }
     
-    const compatibilityCheckUrl = `/check-compatibility/${id}?redirect=${encodeURIComponent(destination)}`;
-    const finalUrl = isCodmProduct ? destination : compatibilityCheckUrl;
+    const finalUrl = `/check-compatibility/${id}`;
 
     return (
       <Link to={finalUrl} className={commonClasses}>
-        {purchase_image_id ? (
-            <>
-                <QrCode className="w-5 h-5" />
-                <span>Pay with QR</span>
-            </>
-        ) : (
-            <>
-                <ExternalLink className="w-5 h-5" />
-                <span>Buy Now</span>
-            </>
-        )}
+        <span>Buy Now</span>
       </Link>
     );
   };

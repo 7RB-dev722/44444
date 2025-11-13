@@ -55,6 +55,16 @@ export interface PurchaseImage {
   image_url: string;
 }
 
+export interface PurchaseIntent {
+  id: string;
+  created_at: string;
+  product_id: string;
+  product_title: string;
+  country: string;
+  email: string;
+  phone_number: string;
+}
+
 export const settingsService = {
   async getSettings(): Promise<Record<string, string>> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -452,6 +462,38 @@ export const purchaseImagesService = {
     const { error } = await supabase.from('purchase_images').delete().eq('id', image.id);
     if (error) throw new Error(`Failed to delete purchase image from DB: ${error.message}`);
   }
+};
+
+export const purchaseIntentsService = {
+  async addIntent(intent: Omit<PurchaseIntent, 'id' | 'created_at'>): Promise<PurchaseIntent> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('purchase_intents')
+      .insert([intent])
+      .select()
+      .single();
+    if (error) throw new Error(`Failed to add purchase intent: ${error.message}`);
+    return data;
+  },
+
+  async getAll(): Promise<PurchaseIntent[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('purchase_intents')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(`Failed to fetch purchase intents: ${error.message}`);
+    return data || [];
+  },
+
+  async deleteIntent(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('purchase_intents')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(`Failed to delete purchase intent: ${error.message}`);
+  },
 };
 
 

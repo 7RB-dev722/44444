@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode } from 'lucide-react';
-import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, supabase } from '../lib/supabase';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users } from 'lucide-react';
+import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -19,7 +19,7 @@ const AVAILABLE_IMAGES = [
 
 const WINNING_PHOTO_PRODUCTS = ['Cheatloop PUBG', 'Cheatloop CODM', 'Sinki'];
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'content' | 'settings';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings';
 
 interface PhotoItemProps {
   photo: WinningPhoto;
@@ -99,6 +99,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [winningPhotos, setWinningPhotos] = useState<WinningPhoto[]>([]);
   const [purchaseImages, setPurchaseImages] = useState<PurchaseImage[]>([]);
+  const [purchaseIntents, setPurchaseIntents] = useState<PurchaseIntent[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -158,18 +159,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     try {
       setLoading(true);
       setError(null);
-      const [productsData, categoriesData, winningPhotosData, settingsData, purchaseImagesData] = await Promise.all([
+      const [productsData, categoriesData, winningPhotosData, settingsData, purchaseImagesData, purchaseIntentsData] = await Promise.all([
         productService.getAllProducts(),
         categoryService.getAllCategories(),
         winningPhotosService.getPhotos(),
         settingsService.getSettings(),
-        purchaseImagesService.getAll()
+        purchaseImagesService.getAll(),
+        purchaseIntentsService.getAll()
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
       setWinningPhotos(winningPhotosData);
       setSettings(settingsData);
       setPurchaseImages(purchaseImagesData);
+      setPurchaseIntents(purchaseIntentsData);
       setSuccess('Data loaded successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -588,6 +591,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const handleDeletePurchaseIntent = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this purchase intent record?')) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await purchaseIntentsService.deleteIntent(id);
+      await loadData();
+      setSuccess('Purchase intent deleted successfully.');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete purchase intent.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getCategoryName = (categoryId: string) => categories.find(c => c.id === categoryId)?.name || 'Uncategorized';
   const getFilteredImages = () => selectedImageCategory === 'all' ? AVAILABLE_IMAGES : AVAILABLE_IMAGES.filter(img => img.category === selectedImageCategory);
 
@@ -654,12 +673,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       <div className="container mx-auto">
         <div className="border-b border-slate-700">
-          <nav className="flex space-x-2" aria-label="Tabs">
+          <nav className="flex space-x-2 overflow-x-auto" aria-label="Tabs">
             <TabButton tab="dashboard" label="Dashboard" icon={LayoutDashboard} />
             <TabButton tab="products" label="Products" icon={Package} />
             <TabButton tab="categories" label="Categories" icon={Tag} />
             <TabButton tab="photos" label="Winning Photos" icon={LucideImage} />
             <TabButton tab="purchase-images" label="Purchase Images" icon={QrCode} />
+            <TabButton tab="purchase-intents" label="Purchase Intents" icon={Users} />
             <TabButton tab="content" label="Site Customization" icon={Palette} />
             <TabButton tab="settings" label="Settings" icon={Settings} />
           </nav>
@@ -674,7 +694,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><Package className="w-8 h-8 text-cyan-400" /><div><p className="text-gray-400 text-sm">Total Products</p><p className="text-2xl font-bold text-white">{products.length}</p></div></div></div>
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><Tag className="w-8 h-8 text-purple-400" /><div><p className="text-gray-400 text-sm">Total Categories</p><p className="text-2xl font-bold text-white">{categories.length}</p></div></div></div>
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><ImageIcon className="w-8 h-8 text-yellow-400" /><div><p className="text-gray-400 text-sm">Winning Photos</p><p className="text-2xl font-bold text-white">{winningPhotos.length}</p></div></div></div>
-              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><QrCode className="w-8 h-8 text-green-400" /><div><p className="text-gray-400 text-sm">Purchase Images</p><p className="text-2xl font-bold text-white">{purchaseImages.length}</p></div></div></div>
+              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><Users className="w-8 h-8 text-green-400" /><div><p className="text-gray-400 text-sm">Purchase Intents</p><p className="text-2xl font-bold text-white">{purchaseIntents.length}</p></div></div></div>
             </div>
           )}
           
@@ -688,6 +708,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               setError={setError}
               setSuccess={setSuccess}
             />
+          )}
+
+          {activeTab === 'purchase-intents' && (
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Purchase Intents ({purchaseIntents.length})</h3>
+              <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-700">
+                      <tr>
+                        <th className="text-left p-4 text-gray-300 font-medium">Date</th>
+                        <th className="text-left p-4 text-gray-300 font-medium">Product</th>
+                        <th className="text-left p-4 text-gray-300 font-medium">Country</th>
+                        <th className="text-left p-4 text-gray-300 font-medium">Email</th>
+                        <th className="text-left p-4 text-gray-300 font-medium">Phone</th>
+                        <th className="text-left p-4 text-gray-300 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseIntents.map((intent) => (
+                        <tr key={intent.id} className="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
+                          <td className="p-4 text-gray-300">{new Date(intent.created_at).toLocaleString()}</td>
+                          <td className="p-4 text-white font-medium">{intent.product_title}</td>
+                          <td className="p-4 text-gray-300">{intent.country}</td>
+                          <td className="p-4 text-gray-300">{intent.email}</td>
+                          <td className="p-4 text-gray-300">{intent.phone_number}</td>
+                          <td className="p-4">
+                            <button onClick={() => handleDeletePurchaseIntent(intent.id)} disabled={saving} className="p-2 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {purchaseIntents.length === 0 && <p className="text-center text-gray-500 py-8">No purchase intents recorded yet.</p>}
+              </div>
+            </div>
           )}
 
           {activeTab === 'purchase-images' && (
@@ -958,7 +1017,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">

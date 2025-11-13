@@ -30,6 +30,18 @@ export const en = {
     checkingFor: "Checking compatibility for:",
     backToProducts: "Back to All Products",
 
+    // Pre-Purchase
+    prePurchaseTitle: "Pre-Purchase Information",
+    prePurchaseSubtitle: "Please provide your details to continue.",
+    countryLabel: "Country",
+    countryPlaceholder: "Select your country",
+    emailLabel: 'Purchase Email *',
+    emailPlaceholder: 'example@email.com',
+    phoneLabel: "Phone Number",
+    phonePlaceholder: "Enter your phone number",
+    proceedToPurchaseButton: "Proceed to Purchase",
+    savingInfo: "Saving your information...",
+
     // Payment
     payFor: 'Pay for',
     paymentFor: 'Payment for',
@@ -48,10 +60,6 @@ export const en = {
     deliverySubtitle: 'After paying, click the button below to open the form, send your details via Telegram, and receive your key.',
     iHavePaidButton: 'I Have Paid',
     modalTitle: 'Submit Purchase Details',
-    emailLabel: 'Purchase Email *',
-    emailPlaceholder: 'example@email.com',
-    phoneLabel: 'Phone Number (Optional)',
-    phonePlaceholder: 'e.g., +1234567890',
     anydeskLabel: 'AnyDesk ID/Address (Optional)',
     modalSubmitButton: 'Send to Telegram',
     formError: 'Please provide a valid email address.',

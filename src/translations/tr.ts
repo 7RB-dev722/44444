@@ -13,7 +13,7 @@ export const tr = {
     igpuYes: "Evet",
     igpuNo: "Hayır",
     checkButton: "Uyumluluğu Kontrol Et",
-    fillAllFields: "Uyumluluğu kontrol etmek için lütfen tüm alanları doldurun.",
+    fillAllFields: "Lütfen tüm alanları doldurun.",
     compatibleTitle: "Uyumlu!",
     compatibleMessage: "Bu ürün donanım özelliklerinizle mükemmel çalışıyor.",
     proceedButton: "Satın Almaya Devam Et",
@@ -29,6 +29,18 @@ export const tr = {
     errorTitle: "Bir Hata Oluştu",
     checkingFor: "Şunun için uyumluluk kontrol ediliyor:",
     backToProducts: "Tüm Ürünlere Geri Dön",
+
+    // Pre-Purchase
+    prePurchaseTitle: "Satın Alma Öncesi Bilgiler",
+    prePurchaseSubtitle: "Devam etmek için lütfen bilgilerinizi girin.",
+    countryLabel: "Ülke",
+    countryPlaceholder: "Ülkenizi seçin",
+    emailLabel: 'Satın Alma E-postası *',
+    emailPlaceholder: 'ornek@eposta.com',
+    phoneLabel: "Telefon Numarası",
+    phonePlaceholder: "Telefon numaranızı girin",
+    proceedToPurchaseButton: "Satın Almaya Devam Et",
+    savingInfo: "Bilgileriniz kaydediliyor...",
 
     // Payment
     payFor: 'Şunun için öde',
@@ -48,10 +60,6 @@ export const tr = {
     deliverySubtitle: 'Ödeme yaptıktan sonra, formu açmak, bilgilerinizi Telegram üzerinden göndermek ve anahtarınızı almak için aşağıdaki düğmeye tıklayın.',
     iHavePaidButton: 'Ödedim',
     modalTitle: 'Satın Alma Detaylarını Gönder',
-    emailLabel: 'Satın Alma E-postası *',
-    emailPlaceholder: 'ornek@eposta.com',
-    phoneLabel: 'Telefon Numarası (İsteğe Bağlı)',
-    phonePlaceholder: 'örneğin, +905xxxxxxxxx',
     anydeskLabel: 'AnyDesk ID/Adresi (İsteğe Bağlı)',
     modalSubmitButton: 'Telegram\'a Gönder',
     formError: 'Lütfen geçerli bir e-posta adresi girin.',

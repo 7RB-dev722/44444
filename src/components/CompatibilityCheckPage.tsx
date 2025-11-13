@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productService, Product } from '../lib/supabase';
 import { AnimatedBackground } from './AnimatedBackground';
 import { AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, ShoppingCart, Cpu, Check, X } from 'lucide-react';
@@ -45,9 +45,7 @@ const SelectionGroup = ({ legend, value, onValueChange, options, gridCols = 2 }:
 
 const CompatibilityCheckPage: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
-    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const redirectUrl = searchParams.get('redirect');
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -79,15 +77,7 @@ const CompatibilityCheckPage: React.FC = () => {
                 ]);
 
                 if (productData && (productData.title.toLowerCase().includes('codm') || productData.title.toLowerCase().includes('call of duty'))) {
-                    if (redirectUrl) {
-                        if (redirectUrl.startsWith('http')) {
-                            window.location.replace(redirectUrl);
-                        } else {
-                            navigate(redirectUrl, { replace: true });
-                        }
-                    } else {
-                        navigate(`/pay/${productData.id}`, { replace: true });
-                    }
+                    navigate(`/pre-purchase/${productData.id}`, { replace: true });
                     return;
                 }
 
@@ -100,7 +90,7 @@ const CompatibilityCheckPage: React.FC = () => {
             }
         };
         fetchData();
-    }, [productId, t.error, navigate, redirectUrl]);
+    }, [productId, t.error, navigate]);
 
     const isFormComplete = cpuType && gpuType && hasIntelIGPU;
 
@@ -150,12 +140,8 @@ const CompatibilityCheckPage: React.FC = () => {
     };
 
     const handleProceed = () => {
-        if (!redirectUrl) return;
-        if (redirectUrl.startsWith('http')) {
-            window.location.replace(redirectUrl);
-        } else {
-            navigate(redirectUrl);
-        }
+        if (!product) return;
+        navigate(`/pre-purchase/${product.id}`);
     };
 
     const LangButton = ({ targetLang, children }: { targetLang: Lang, children: React.ReactNode }) => (
@@ -292,7 +278,7 @@ const CompatibilityCheckPage: React.FC = () => {
                                         {suggestedProducts.map(p => (
                                             <Link 
                                                 key={p.id} 
-                                                to={`/check-compatibility/${p.id}?redirect=${encodeURIComponent(p.buy_link || `/pay/${p.id}`)}`} 
+                                                to={`/check-compatibility/${p.id}`} 
                                                 className="block p-4 bg-slate-700/50 rounded-xl hover:bg-slate-700 transition-colors"
                                             >
                                                 <div className="flex items-center justify-between">
