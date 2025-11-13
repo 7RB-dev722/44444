@@ -193,19 +193,21 @@ const LinkPaymentPage: React.FC = () => {
                             )}
                         </div>
 
-                         <div className="bg-slate-700/50 p-6 rounded-xl border border-slate-600 text-center">
-                            <h2 className="text-xl font-bold text-white mb-4 flex items-center justify-center space-x-3 rtl:space-x-reverse">
-                                <Send className="w-6 h-6 text-blue-400" />
-                                <span>{t.deliveryTitle}</span>
-                            </h2>
-                            <p className="text-gray-300 mb-6">{t.deliverySubtitle}</p>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="w-full max-w-xs mx-auto py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
-                            >
-                                {t.iHavePaidButton}
-                            </button>
-                        </div>
+                        {!settingsLoading && settings.show_i_have_paid_button !== 'false' && (
+                            <div className="bg-slate-700/50 p-6 rounded-xl border border-slate-600 text-center">
+                                <h2 className="text-xl font-bold text-white mb-4 flex items-center justify-center space-x-3 rtl:space-x-reverse">
+                                    <Send className="w-6 h-6 text-blue-400" />
+                                    <span>{t.deliveryTitle}</span>
+                                </h2>
+                                <p className="text-gray-300 mb-6">{t.deliverySubtitle}</p>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="w-full max-w-xs mx-auto py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                                >
+                                    {t.iHavePaidButton}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mt-8 text-center">

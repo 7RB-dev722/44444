@@ -33,6 +33,7 @@ const defaultSettings = {
   show_all_whatsapp_buttons: 'true',
   show_product_card_note: 'true',
   product_card_size: 'default',
+  show_i_have_paid_button: 'true',
 };
 
 const SettingsContext = createContext<SettingsContextType>({

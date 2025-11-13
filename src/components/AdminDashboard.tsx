@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
@@ -956,6 +956,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         label="Show All WhatsApp Buttons Site-Wide"
                         enabled={settings.show_all_whatsapp_buttons !== 'false'}
                         onChange={(enabled) => setSettings({...settings, show_all_whatsapp_buttons: String(enabled)})}
+                    />
+                </div>
+              </div>
+
+              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center space-x-2"><CreditCard className="w-5 h-5 text-green-400"/><span>Payment Page Settings</span></h2>
+                <div className="space-y-6">
+                    <ToggleSwitch
+                        label="Show 'I Have Paid' Button"
+                        enabled={settings.show_i_have_paid_button !== 'false'}
+                        onChange={(enabled) => setSettings({...settings, show_i_have_paid_button: String(enabled)})}
                     />
                 </div>
               </div>
