@@ -132,7 +132,7 @@ const ImageUploadField: React.FC<{
             <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
             <div className="flex items-center space-x-4">
                 <img
-                    src={preview || imageUrl || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/150x100/1f2937/38bdf8?text=No+Image'}
+                    src={preview || imageUrl || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/150x100/1f2937/38bdf8?text=No+Image'}
                     alt={`${label} Preview`}
                     className="w-36 h-24 object-contain rounded-lg bg-slate-700 p-1 border border-slate-600"
                 />
@@ -244,7 +244,7 @@ const SiteContentEditor: React.FC<SiteContentEditorProps> = ({ settings, onSetti
                     <label className="block text-sm font-medium text-gray-300 mb-2">Site Logo</label>
                     <div className="flex items-center space-x-6">
                         <img
-                            src={logoPreview || settings.site_logo_url || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=Logo'}
+                            src={logoPreview || settings.site_logo_url || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=Logo'}
                             alt="Site Logo Preview"
                             className="w-20 h-20 object-contain rounded-lg bg-slate-700 p-2 border border-slate-600"
                         />

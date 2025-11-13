@@ -62,7 +62,6 @@ const CompatibilityCheckPage: React.FC = () => {
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
     const [checkResult, setCheckResult] = useState<'pending' | 'compatible' | 'incompatible'>('pending');
-    const [incompatibleReason, setIncompatibleReason] = useState<'sinki' | 'cheatloop' | null>(null);
     
     useEffect(() => {
         const fetchData = async () => {
@@ -128,13 +127,12 @@ const CompatibilityCheckPage: React.FC = () => {
     const handleCheckCompatibility = () => {
         if (!isFormComplete || !product) return;
 
-        const { compatible, reason } = checkProductCompatibility(product, { gpuType, hasIntelIGPU });
+        const { compatible } = checkProductCompatibility(product, { gpuType, hasIntelIGPU });
 
         if (compatible) {
             setCheckResult('compatible');
         } else {
             setCheckResult('incompatible');
-            setIncompatibleReason(reason);
             findSuggestions();
         }
     };
@@ -284,9 +282,7 @@ const CompatibilityCheckPage: React.FC = () => {
                             <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
                             <h2 className="text-3xl font-bold text-white mb-2">{t.incompatibleTitle}</h2>
                             <p className="text-red-300 mb-6">
-                                {incompatibleReason === 'sinki' ? t.incompatibleMessageSinki :
-                                 incompatibleReason === 'cheatloop' ? t.incompatibleMessageCheatloop :
-                                 t.incompatibleMessageGeneral}
+                                {t.incompatibleMessageGeneral}
                             </p>
                             
                             {suggestedProducts.length > 0 ? (
