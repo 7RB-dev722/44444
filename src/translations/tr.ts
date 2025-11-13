@@ -33,14 +33,19 @@ export const tr = {
     // Pre-Purchase
     prePurchaseTitle: "Satın Alma Öncesi Bilgiler",
     prePurchaseSubtitle: "Devam etmek için lütfen bilgilerinizi girin.",
-    countryLabel: "Ülke",
+    countryLabel: "Ülke *",
     countryPlaceholder: "Ülkenizi seçin",
-    emailLabel: 'Satın Alma E-postası *',
-    emailPlaceholder: 'ornek@eposta.com',
-    phoneLabel: "Telefon Numarası",
+    emailLabel: 'E-posta *',
+    emailPlaceholder: "ornek@eposta.com",
+    phoneLabel: "Telefon Numarası *",
     phonePlaceholder: "Telefon numaranızı girin",
     proceedToPurchaseButton: "Satın Almaya Devam Et",
     savingInfo: "Bilgileriniz kaydediliyor...",
+    emailRequired: "E-posta gereklidir.",
+    emailInvalid: "Lütfen geçerli bir e-posta adresi girin.",
+    phoneRequired: "Telefon numarası gereklidir.",
+    phoneInvalid: "Lütfen geçerli bir telefon numarası girin.",
+    countryRequired: "Lütfen ülkenizi seçin.",
 
     // Payment
     payFor: 'Şunun için öde',

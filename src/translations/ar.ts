@@ -33,14 +33,19 @@ export const ar = {
     // Pre-Purchase
     prePurchaseTitle: "معلومات ما قبل الشراء",
     prePurchaseSubtitle: "يرجى تقديم التفاصيل الخاصة بك للمتابعة.",
-    countryLabel: "الدولة",
+    countryLabel: "الدولة *",
     countryPlaceholder: "اختر دولتك",
     emailLabel: 'البريد الإلكتروني *',
     emailPlaceholder: 'example@email.com',
-    phoneLabel: "رقم الهاتف",
+    phoneLabel: "رقم الهاتف *",
     phonePlaceholder: "أدخل رقم هاتفك",
     proceedToPurchaseButton: "متابعة الشراء",
     savingInfo: "جاري حفظ معلوماتك...",
+    emailRequired: "البريد الإلكتروني مطلوب.",
+    emailInvalid: "الرجاء إدخال عنوان بريد إلكتروني صالح.",
+    phoneRequired: "رقم الهاتف مطلوب.",
+    phoneInvalid: "الرجاء إدخال رقم هاتف صالح.",
+    countryRequired: "يرجى اختيار دولتك.",
 
     // Payment
     payFor: 'الدفع مقابل',

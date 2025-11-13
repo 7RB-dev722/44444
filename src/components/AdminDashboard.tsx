@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard } from 'lucide-react';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
@@ -118,6 +118,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [moveTargetProduct, setMoveTargetProduct] = useState('');
   const [photoProductFilter, setPhotoProductFilter] = useState<string>('all');
   const [newPurchaseImage, setNewPurchaseImage] = useState<{ file: File | null; name: string }>({ file: null, name: '' });
+  const [invoiceModalIntent, setInvoiceModalIntent] = useState<PurchaseIntent | null>(null);
+  const [productKey, setProductKey] = useState('');
 
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'created_at' | 'updated_at'>>({
@@ -735,9 +737,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           <td className="p-4 text-gray-300">{intent.email}</td>
                           <td className="p-4 text-gray-300">{intent.phone_number}</td>
                           <td className="p-4">
-                            <button onClick={() => handleDeletePurchaseIntent(intent.id)} disabled={saving} className="p-2 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center space-x-2">
+                              <button 
+                                onClick={() => { setInvoiceModalIntent(intent); setProductKey(''); }} 
+                                className="p-2 text-cyan-400 hover:text-cyan-300 transition-colors" 
+                                title="Send Invoice via WhatsApp"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => handleDeletePurchaseIntent(intent.id)} disabled={saving} className="p-2 text-red-400 hover:text-red-300 transition-colors disabled:opacity-50">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1135,6 +1146,80 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <button onClick={() => setShowMoveModal(false)} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">Cancel</button>
               <button onClick={handleMoveSelected} disabled={!moveTargetProduct || saving} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors">
                 {saving ? 'Moving...' : 'Move Photos'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {invoiceModalIntent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 max-w-2xl w-full animate-fade-in-up">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white">Send Invoice to WhatsApp</h3>
+              <button onClick={() => setInvoiceModalIntent(null)} className="p-2 text-gray-400 hover:text-white rounded-full">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Left side: Details and Key Input */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">Purchase Details</h4>
+                <p><strong className="text-gray-400">Product:</strong> {invoiceModalIntent.product_title}</p>
+                <p><strong className="text-gray-400">Country:</strong> {invoiceModalIntent.country}</p>
+                <p><strong className="text-gray-400">Email:</strong> {invoiceModalIntent.email}</p>
+                <p><strong className="text-gray-400">Phone:</strong> {invoiceModalIntent.phone_number}</p>
+
+                <div className="pt-4">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Product Key *</label>
+                  <input 
+                    type="text" 
+                    value={productKey} 
+                    onChange={(e) => setProductKey(e.target.value)} 
+                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                    placeholder="Enter the product key"
+                  />
+                </div>
+              </div>
+
+              {/* Right side: Invoice Preview */}
+              <div>
+                <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">Invoice Preview (English)</h4>
+                <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 text-sm text-gray-300 whitespace-pre-wrap font-mono h-64 overflow-y-auto">
+                  {`Hello!
+
+Thank you for your purchase of "${invoiceModalIntent.product_title}".
+
+Here are your invoice details:
+- Product: ${invoiceModalIntent.product_title}
+- Country: ${invoiceModalIntent.country}
+
+Your Product Key is:
+${productKey || '[Enter key to see it here]'}
+
+Please contact us if you have any questions.
+Thank you,
+Cheatloop Team`}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4 mt-6">
+              <button onClick={() => setInvoiceModalIntent(null)} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">Cancel</button>
+              <button 
+                onClick={() => {
+                  const message = `Hello!\n\nThank you for your purchase of "${invoiceModalIntent.product_title}".\n\nHere are your invoice details:\n- Product: ${invoiceModalIntent.product_title}\n- Country: ${invoiceModalIntent.country}\n\nYour Product Key is:\n${productKey}\n\nPlease contact us if you have any questions.\nThank you,\nCheatloop Team`;
+                  const phoneNumber = invoiceModalIntent.phone_number.replace(/\D/g, '');
+                  const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                  window.open(url, '_blank');
+                  setInvoiceModalIntent(null);
+                }} 
+                disabled={!productKey} 
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors flex items-center space-x-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>Send to WhatsApp</span>
               </button>
             </div>
           </div>

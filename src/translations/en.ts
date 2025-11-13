@@ -33,14 +33,19 @@ export const en = {
     // Pre-Purchase
     prePurchaseTitle: "Pre-Purchase Information",
     prePurchaseSubtitle: "Please provide your details to continue.",
-    countryLabel: "Country",
+    countryLabel: "Country *",
     countryPlaceholder: "Select your country",
-    emailLabel: 'Purchase Email *',
+    emailLabel: 'Email *',
     emailPlaceholder: 'example@email.com',
-    phoneLabel: "Phone Number",
+    phoneLabel: "Phone Number *",
     phonePlaceholder: "Enter your phone number",
     proceedToPurchaseButton: "Proceed to Purchase",
     savingInfo: "Saving your information...",
+    emailRequired: "Email is required.",
+    emailInvalid: "Please enter a valid email address.",
+    phoneRequired: "Phone number is required.",
+    phoneInvalid: "Please enter a valid phone number.",
+    countryRequired: "Please select your country.",
 
     // Payment
     payFor: 'Pay for',

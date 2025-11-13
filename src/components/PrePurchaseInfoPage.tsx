@@ -16,19 +16,19 @@ const PrePurchaseInfoPage: React.FC = () => {
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [formError, setFormError] = useState<string | null>(null);
-
+    const [fetchError, setFetchError] = useState<string | null>(null);
+    
     const { lang, setLang, t } = useLanguage();
 
     const [country, setCountry] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [errors, setErrors] = useState<{ country?: string, email?: string; phone?: string; general?: string }>({});
 
     useEffect(() => {
         const fetchProduct = async () => {
             if (!productId) {
-                setError(t.error);
+                setFetchError(t.error);
                 setLoading(false);
                 return;
             }
@@ -37,7 +37,7 @@ const PrePurchaseInfoPage: React.FC = () => {
                 const productData = await productService.getProductById(productId);
                 setProduct(productData);
             } catch (err: any) {
-                setError(t.error);
+                setFetchError(t.error);
             } finally {
                 setLoading(false);
             }
@@ -45,15 +45,39 @@ const PrePurchaseInfoPage: React.FC = () => {
         fetchProduct();
     }, [productId, t.error]);
 
-    const isFormComplete = country && email && phone;
+    const validateForm = () => {
+        const newErrors: { country?: string, email?: string; phone?: string; general?: string } = {};
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            newErrors.email = t.emailRequired;
+        } else if (!emailRegex.test(email)) {
+            newErrors.email = t.emailInvalid;
+        }
+
+        const phoneRegex = /^[+]?[0-9\s-]{7,20}$/;
+        if (!phone) {
+            newErrors.phone = t.phoneRequired;
+        } else if (!phoneRegex.test(phone)) {
+            newErrors.phone = t.phoneInvalid;
+        }
+
+        if (!country) {
+            newErrors.country = t.countryRequired;
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleSubmit = async () => {
-        if (!isFormComplete || !product) {
-            setFormError(t.fillAllFields);
+        if (!validateForm() || !product) {
             return;
         }
-        setFormError(null);
+        
         setSaving(true);
+        setErrors({});
+
         try {
             await purchaseIntentsService.addIntent({
                 product_id: product.id,
@@ -68,11 +92,11 @@ const PrePurchaseInfoPage: React.FC = () => {
             } else if (product.buy_link) {
                 navigate(`/link-pay/${product.id}`);
             } else {
-                setError('No payment method configured for this product.');
+                setErrors({ general: 'No payment method configured for this product.' });
                 setSaving(false);
             }
         } catch (err: any) {
-            setError(err.message || 'Failed to save your information.');
+            setErrors({ general: err.message || 'Failed to save your information.' });
             setSaving(false);
         }
     };
@@ -102,14 +126,14 @@ const PrePurchaseInfoPage: React.FC = () => {
         );
     }
 
-    if (error || !product) {
+    if (fetchError || !product) {
         return (
              <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 relative flex items-center justify-center p-4">
                 <AnimatedBackground />
                 <div className="text-center bg-red-500/10 border border-red-500/20 p-8 rounded-2xl max-w-lg z-10">
                     <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-white mb-2">{t.errorTitle}</h2>
-                    <p className="text-red-300 mb-6">{error || 'Product not found.'}</p>
+                    <p className="text-red-300 mb-6">{fetchError || 'Product not found.'}</p>
                     <Link to="/" className="inline-flex items-center space-x-2 bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-3 rounded-xl transition-colors">
                         <Home className="w-5 h-5" />
                         <span>{t.goBack}</span>
@@ -139,35 +163,45 @@ const PrePurchaseInfoPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <SearchableSelect
-                          label={t.countryLabel}
-                          options={countries.map(c => c.name)}
-                          value={country}
-                          onChange={setCountry}
-                          placeholder={t.countryPlaceholder}
-                        />
+                        <div>
+                            <SearchableSelect
+                              label={t.countryLabel}
+                              options={countries.map(c => c.name)}
+                              value={country}
+                              onChange={setCountry}
+                              placeholder={t.countryPlaceholder}
+                            />
+                            {errors.country && <p className="text-red-400 text-xs mt-1 px-1">{errors.country}</p>}
+                        </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">{t.emailLabel}</label>
                             <div className="relative">
                                 <Mail className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 rtl:pr-10 rtl:pl-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500" placeholder={t.emailPlaceholder} required />
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 rtl:pr-10 rtl:pl-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500" placeholder={t.emailPlaceholder} />
                             </div>
+                            {errors.email && <p className="text-red-400 text-xs mt-1 px-1">{errors.email}</p>}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">{t.phoneLabel}</label>
                             <div className="relative">
                                 <Phone className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full pl-10 rtl:pr-10 rtl:pl-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500" placeholder={t.phonePlaceholder} required />
+                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full pl-10 rtl:pr-10 rtl:pl-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500" placeholder={t.phonePlaceholder} />
                             </div>
+                            {errors.phone && <p className="text-red-400 text-xs mt-1 px-1">{errors.phone}</p>}
                         </div>
                     </div>
                     
                     <div className="pt-8">
+                        {errors.general && (
+                            <div className="text-center text-sm text-red-400 mb-4 bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                                {errors.general}
+                            </div>
+                        )}
                         <button 
                             onClick={handleSubmit} 
-                            disabled={!isFormComplete || saving}
+                            disabled={saving}
                             className="w-full flex items-center justify-center space-x-3 rtl:space-x-reverse bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white font-bold px-6 py-4 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                         >
                             {saving ? (
@@ -182,7 +216,6 @@ const PrePurchaseInfoPage: React.FC = () => {
                                 </>
                             )}
                         </button>
-                        {formError && <p className="text-center text-sm text-red-400 mt-3">{formError}</p>}
                     </div>
 
                     <div className="mt-8 text-center">
