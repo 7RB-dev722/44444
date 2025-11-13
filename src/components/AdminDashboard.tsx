@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase, invoiceTemplateService, InvoiceTemplateData, ProductKey, productKeysService } from '../lib/supabase';
@@ -127,7 +127,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [photoProductFilter, setPhotoProductFilter] = useState<string>('all');
   const [newPurchaseImage, setNewPurchaseImage] = useState<{ file: File | null; name: string }>({ file: null, name: '' });
   const [invoiceModalIntent, setInvoiceModalIntent] = useState<PurchaseIntent | null>(null);
-  const [drawnProductKey, setDrawnProductKey] = useState<string | null>(null);
+  const [productKeyForInvoice, setProductKeyForInvoice] = useState<string | null>(null);
   const [isDrawingKey, setIsDrawingKey] = useState(false);
   const [selectedPurchaseIntents, setSelectedPurchaseIntents] = useState<string[]>([]);
   const [showPrintOptions, setShowPrintOptions] = useState(false);
@@ -146,6 +146,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const productImageInputRef = useRef<HTMLInputElement>(null);
   const purchaseImageFileInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const availableKeysCount = useMemo(() => {
+    return products.reduce((acc, product) => {
+        const count = productKeys.filter(key => key.product_id === product.id && !key.is_used).length;
+        acc[product.id] = count;
+        return acc;
+    }, {} as Record<string, number>);
+  }, [products, productKeys]);
 
 
   useEffect(() => {
@@ -691,11 +699,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   const handleExternalPrint = () => {
-      if (!invoiceModalIntent || !drawnProductKey) {
-          setError("Please draw a product key first.");
+      if (!invoiceModalIntent || !productKeyForInvoice) {
+          setError("Please enter or draw a product key first.");
           return;
       }
-      const invoiceHTML = generateInvoiceHTML(invoiceModalIntent, drawnProductKey);
+      const invoiceHTML = generateInvoiceHTML(invoiceModalIntent, productKeyForInvoice);
       const printWindow = window.open('', '_blank');
       if (printWindow) {
           printWindow.document.write(invoiceHTML);
@@ -711,14 +719,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     if (!invoiceModalIntent || !invoiceModalIntent.product_id) return;
     setIsDrawingKey(true);
     setError(null);
-    setDrawnProductKey(null);
+    setProductKeyForInvoice(null);
     try {
         const key = await productKeysService.claimAvailableKey(
             invoiceModalIntent.product_id,
             invoiceModalIntent.email,
             invoiceModalIntent.id
         );
-        setDrawnProductKey(key);
+        setProductKeyForInvoice(key);
         setSuccess('Key successfully drawn and assigned!');
         setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -884,7 +892,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           <td className="p-3">
                             <div className="flex items-center space-x-1">
                               <button 
-                                onClick={() => { setInvoiceModalIntent(intent); setDrawnProductKey(null); }} 
+                                onClick={() => { setInvoiceModalIntent(intent); setProductKeyForInvoice(null); }} 
                                 className="p-2 text-cyan-400 hover:bg-slate-600 rounded-md transition-colors" 
                                 title="Send Invoice"
                               >
@@ -1181,7 +1189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -1310,6 +1318,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       {invoiceModalIntent && (() => {
         const productForIntent = getProductForIntent(invoiceModalIntent);
+        const availableKeys = productForIntent ? availableKeysCount[productForIntent.id] || 0 : 0;
         
         const invoiceBodyEn = `
 Hello,
@@ -1323,7 +1332,7 @@ Price: $${productForIntent?.price || 'N/A'}
 Date: ${new Date(invoiceModalIntent.created_at).toLocaleDateString()}
 
 Your Product Key:
-${drawnProductKey || 'KEY_NOT_DRAWN_YET'}
+${productKeyForInvoice || 'KEY_NOT_ENTERED_YET'}
 --------------------------------
 
 If you have any questions, please contact support.
@@ -1357,19 +1366,27 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <div className="pt-4">
                       <label className="block text-sm font-medium text-gray-300 mb-2">مفتاح المنتج</label>
                       <div className="flex items-center space-x-2">
-                        <div className="flex-1 p-3 bg-slate-900 border border-slate-600 rounded-xl text-white font-mono h-[46px] flex items-center">
-                            {drawnProductKey || '...'}
-                        </div>
+                        <input
+                            type="text"
+                            value={productKeyForInvoice || ''}
+                            onChange={(e) => setProductKeyForInvoice(e.target.value)}
+                            className="flex-1 p-3 bg-slate-900 border border-slate-600 rounded-xl text-white font-mono h-[46px]"
+                            placeholder="أدخل المفتاح يدويًا أو اسحبه"
+                        />
                         <button 
                             onClick={handleDrawKey}
-                            disabled={isDrawingKey}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50"
+                            disabled={isDrawingKey || availableKeys === 0}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isDrawingKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                             <span>سحب مفتاح</span>
                         </button>
                       </div>
-                      {!drawnProductKey && <p className="text-xs text-gray-400 mt-1">اضغط على "سحب مفتاح" للحصول على مفتاح متاح لهذا المنتج.</p>}
+                      {availableKeys === 0 && !productKeyForInvoice ? (
+                        <p className="text-xs text-red-400 mt-1">لا توجد مفاتيح متاحة لهذا المنتج. يرجى إضافة المزيد.</p>
+                      ) : !productKeyForInvoice && (
+                        <p className="text-xs text-gray-400 mt-1">اضغط على "سحب مفتاح" للحصول على مفتاح متاح. ({availableKeys} متاح)</p>
+                      )}
                     </div>
                   </div>
 
@@ -1377,7 +1394,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">معاينة الفاتورة</h4>
                     <iframe
                       ref={iframeRef}
-                      srcDoc={generateInvoiceHTML(invoiceModalIntent, drawnProductKey || '')}
+                      srcDoc={generateInvoiceHTML(invoiceModalIntent, productKeyForInvoice || '')}
                       className="mt-4 w-full h-80 bg-slate-900 rounded-lg border border-slate-700"
                       title="Invoice Preview"
                     />
@@ -1390,36 +1407,36 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                       
                       <button
                         onClick={() => {
-                            if (!drawnProductKey) {
-                                setError("يرجى سحب مفتاح المنتج أولاً.");
+                            if (!productKeyForInvoice) {
+                                setError("يرجى إدخال أو سحب مفتاح المنتج أولاً.");
                                 return;
                             }
                             setShowPrintOptions(true);
                         }}
-                        disabled={!drawnProductKey}
-                        className={`px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={!productKeyForInvoice}
+                        className={`px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKeyForInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Printer className="w-4 h-4" />
                         <span>طباعة / PDF</span>
                       </button>
 
                       <a
-                        href={!drawnProductKey ? undefined : whatsappUrl}
+                        href={!productKeyForInvoice ? undefined : whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (!drawnProductKey) e.preventDefault(); }}
+                        className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKeyForInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!productKeyForInvoice) e.preventDefault(); }}
                       >
                         <MessageSquare className="w-4 h-4" />
                         <span>إرسال عبر WhatsApp</span>
                       </a>
 
                       <a
-                        href={!drawnProductKey ? undefined : gmailUrl}
+                        href={!productKeyForInvoice ? undefined : gmailUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (!drawnProductKey) e.preventDefault(); }}
+                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKeyForInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!productKeyForInvoice) e.preventDefault(); }}
                       >
                         <Mail className="w-4 h-4" />
                         <span>إرسال عبر Gmail</span>

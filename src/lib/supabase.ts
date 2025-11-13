@@ -540,23 +540,26 @@ export const invoiceTemplateService = {
 };
 
 export const productKeysService = {
-  async addKeys(productId: string, keys: string[]): Promise<void> {
+  async addKeys(productId: string, keys: string[]): Promise<number> {
     if (!supabase) throw new Error('Supabase not configured');
-    if (keys.length === 0) return;
+    if (keys.length === 0) return 0;
 
     const keysToInsert = keys.map(key => ({
       product_id: productId,
       key_value: key.trim(),
     }));
 
-    const { error } = await supabase.from('product_keys').insert(keysToInsert);
+    const { data, error } = await supabase
+      .from('product_keys')
+      .upsert(keysToInsert, { onConflict: 'key_value', ignoreDuplicates: true })
+      .select();
+
     if (error) {
       console.error('Error adding product keys:', error);
-      if (error.code === '23505') { // unique_violation
-        throw new Error('Failed to add keys. One or more keys already exist in the database.');
-      }
       throw new Error(`Failed to add product keys: ${error.message}`);
     }
+    
+    return data?.length ?? 0;
   },
 
   async getKeys(filters: { productId?: string; isUsed?: boolean } = {}): Promise<ProductKey[]> {
@@ -591,6 +594,20 @@ export const productKeysService = {
         throw new Error(`Failed to claim a key: ${error.message}`);
     }
     return data;
+  },
+
+  async returnKey(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('product_keys')
+      .update({
+        is_used: false,
+        used_by_email: null,
+        used_at: null,
+        purchase_intent_id: null,
+      })
+      .eq('id', id);
+    if (error) throw new Error(`Failed to return key: ${error.message}`);
   },
 
   async deleteKey(id: string): Promise<void> {
