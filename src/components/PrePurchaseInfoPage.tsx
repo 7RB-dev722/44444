@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productService, purchaseIntentsService, Product } from '../lib/supabase';
 import { AnimatedBackground } from './AnimatedBackground';
-import { AlertTriangle, ArrowRight, Home, Mail, Phone, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Home, Mail, Phone, RefreshCw, Info } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { countries } from '../data/countries';
 import SearchableSelect from './SearchableSelect';
@@ -21,8 +21,9 @@ const PrePurchaseInfoPage: React.FC = () => {
     const { lang, setLang, t } = useLanguage();
 
     const [country, setCountry] = useState('');
+    const [countryCode, setCountryCode] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+    const [localPhone, setLocalPhone] = useState('');
     const [errors, setErrors] = useState<{ country?: string, email?: string; phone?: string; general?: string }>({});
 
     useEffect(() => {
@@ -45,8 +46,20 @@ const PrePurchaseInfoPage: React.FC = () => {
         fetchProduct();
     }, [productId, t.error]);
 
+    const handleCountryChange = (selectedCountryName: string) => {
+        const selectedCountry = countries.find(c => c.name === selectedCountryName);
+        if (selectedCountry) {
+            setCountry(selectedCountryName);
+            setCountryCode(selectedCountry.code);
+        } else {
+            setCountry('');
+            setCountryCode('');
+        }
+    };
+
     const validateForm = () => {
         const newErrors: { country?: string, email?: string; phone?: string; general?: string } = {};
+        const fullPhoneNumber = countryCode + localPhone;
         
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email) {
@@ -55,10 +68,9 @@ const PrePurchaseInfoPage: React.FC = () => {
             newErrors.email = t.emailInvalid;
         }
 
-        const phoneRegex = /^[+]?[0-9\s-]{7,20}$/;
-        if (!phone) {
+        if (!localPhone) {
             newErrors.phone = t.phoneRequired;
-        } else if (!phoneRegex.test(phone)) {
+        } else if (fullPhoneNumber.length < 8 || fullPhoneNumber.length > 20) {
             newErrors.phone = t.phoneInvalid;
         }
 
@@ -77,6 +89,7 @@ const PrePurchaseInfoPage: React.FC = () => {
         
         setSaving(true);
         setErrors({});
+        const fullPhoneNumber = countryCode + localPhone;
 
         try {
             await purchaseIntentsService.addIntent({
@@ -84,7 +97,7 @@ const PrePurchaseInfoPage: React.FC = () => {
                 product_title: product.title,
                 country,
                 email,
-                phone_number: phone,
+                phone_number: fullPhoneNumber,
             });
 
             if (product.purchase_image_id) {
@@ -168,7 +181,7 @@ const PrePurchaseInfoPage: React.FC = () => {
                               label={t.countryLabel}
                               options={countries.map(c => c.name)}
                               value={country}
-                              onChange={setCountry}
+                              onChange={handleCountryChange}
                               placeholder={t.countryPlaceholder}
                             />
                             {errors.country && <p className="text-red-400 text-xs mt-1 px-1">{errors.country}</p>}
@@ -186,14 +199,33 @@ const PrePurchaseInfoPage: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">{t.phoneLabel}</label>
                             <div className="relative">
-                                <Phone className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full pl-10 rtl:pr-10 rtl:pl-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500" placeholder={t.phonePlaceholder} />
+                                <div className="absolute inset-y-0 left-3 rtl:right-3 rtl:left-auto flex items-center pointer-events-none">
+                                    <Phone className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <div className="flex items-stretch w-full bg-slate-700 border border-slate-600 rounded-xl focus-within:border-cyan-500 overflow-hidden">
+                                    <span 
+                                        className="flex items-center pl-10 rtl:pr-10 rtl:pl-4 py-3 text-gray-400 bg-slate-800 border-r rtl:border-l rtl:border-r-0 border-slate-600"
+                                    >
+                                        {countryCode || '+...'}
+                                    </span>
+                                    <input 
+                                        type="tel" 
+                                        value={localPhone} 
+                                        onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ''))}
+                                        className="w-full bg-transparent py-3 px-4 text-white placeholder-gray-400 focus:outline-none" 
+                                        placeholder={t.phonePlaceholder} 
+                                    />
+                                </div>
                             </div>
                             {errors.phone && <p className="text-red-400 text-xs mt-1 px-1">{errors.phone}</p>}
                         </div>
                     </div>
                     
                     <div className="pt-8">
+                        <div className="text-center text-sm text-yellow-400 mb-4 bg-yellow-500/10 p-3 rounded-lg border border-yellow-500/20 flex items-center justify-center space-x-2 rtl:space-x-reverse">
+                            <Info className="w-5 h-5 flex-shrink-0"/>
+                            <span>{t.infoNote}</span>
+                        </div>
                         {errors.general && (
                             <div className="text-center text-sm text-red-400 mb-4 bg-red-500/10 p-3 rounded-lg border border-red-500/20">
                                 {errors.general}

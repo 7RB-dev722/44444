@@ -38,7 +38,7 @@ export const tr = {
     emailLabel: 'E-posta *',
     emailPlaceholder: "ornek@eposta.com",
     phoneLabel: "Telefon Numarası *",
-    phonePlaceholder: "Telefon numaranızı girin",
+    phonePlaceholder: "Yerel numaranızı girin",
     proceedToPurchaseButton: "Satın Almaya Devam Et",
     savingInfo: "Bilgileriniz kaydediliyor...",
     emailRequired: "E-posta gereklidir.",
@@ -46,6 +46,7 @@ export const tr = {
     phoneRequired: "Telefon numarası gereklidir.",
     phoneInvalid: "Lütfen geçerli bir telefon numarası girin.",
     countryRequired: "Lütfen ülkenizi seçin.",
+    infoNote: "Ürün anahtarınızı WhatsApp üzerinden alabilmeniz için bilgileriniz gerçek olmalıdır.",
 
     // Payment
     payFor: 'Şunun için öde',

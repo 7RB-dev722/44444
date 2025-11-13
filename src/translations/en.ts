@@ -38,7 +38,7 @@ export const en = {
     emailLabel: 'Email *',
     emailPlaceholder: 'example@email.com',
     phoneLabel: "Phone Number *",
-    phonePlaceholder: "Enter your phone number",
+    phonePlaceholder: "Enter your local number",
     proceedToPurchaseButton: "Proceed to Purchase",
     savingInfo: "Saving your information...",
     emailRequired: "Email is required.",
@@ -46,6 +46,7 @@ export const en = {
     phoneRequired: "Phone number is required.",
     phoneInvalid: "Please enter a valid phone number.",
     countryRequired: "Please select your country.",
+    infoNote: "Your information must be genuine to receive your product key via WhatsApp.",
 
     // Payment
     payFor: 'Pay for',

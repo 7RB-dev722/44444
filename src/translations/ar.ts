@@ -38,7 +38,7 @@ export const ar = {
     emailLabel: 'البريد الإلكتروني *',
     emailPlaceholder: 'example@email.com',
     phoneLabel: "رقم الهاتف *",
-    phonePlaceholder: "أدخل رقم هاتفك",
+    phonePlaceholder: "أدخل رقمك المحلي",
     proceedToPurchaseButton: "متابعة الشراء",
     savingInfo: "جاري حفظ معلوماتك...",
     emailRequired: "البريد الإلكتروني مطلوب.",
@@ -46,6 +46,7 @@ export const ar = {
     phoneRequired: "رقم الهاتف مطلوب.",
     phoneInvalid: "الرجاء إدخال رقم هاتف صالح.",
     countryRequired: "يرجى اختيار دولتك.",
+    infoNote: "يجب أن تكون معلوماتك حقيقية لكي يتم إرسال المفتاح الخاص بك على الواتساب.",
 
     // Payment
     payFor: 'الدفع مقابل',
