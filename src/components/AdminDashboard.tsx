@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink } from 'lucide-react';
-import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase } from '../lib/supabase';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound } from 'lucide-react';
+import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase, invoiceTemplateService, InvoiceTemplateData, ProductKey, productKeysService } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
+import InvoiceEditor from './InvoiceEditor';
+import ProductKeysManager from './ProductKeysManager';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { useSettings } from '../contexts/SettingsContext';
@@ -22,7 +24,7 @@ const AVAILABLE_IMAGES = [
 
 const WINNING_PHOTO_PRODUCTS = ['Cheatloop PUBG', 'Cheatloop CODM', 'Sinki'];
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys';
 
 interface PhotoItemProps {
   photo: WinningPhoto;
@@ -103,6 +105,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [winningPhotos, setWinningPhotos] = useState<WinningPhoto[]>([]);
   const [purchaseImages, setPurchaseImages] = useState<PurchaseImage[]>([]);
   const [purchaseIntents, setPurchaseIntents] = useState<PurchaseIntent[]>([]);
+  const [invoiceTemplates, setInvoiceTemplates] = useState<InvoiceTemplateData[]>([]);
+  const [productKeys, setProductKeys] = useState<ProductKey[]>([]);
   const { settings: siteSettings, loading: settingsLoading } = useSettings();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -123,7 +127,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [photoProductFilter, setPhotoProductFilter] = useState<string>('all');
   const [newPurchaseImage, setNewPurchaseImage] = useState<{ file: File | null; name: string }>({ file: null, name: '' });
   const [invoiceModalIntent, setInvoiceModalIntent] = useState<PurchaseIntent | null>(null);
-  const [productKey, setProductKey] = useState('');
+  const [drawnProductKey, setDrawnProductKey] = useState<string | null>(null);
+  const [isDrawingKey, setIsDrawingKey] = useState(false);
   const [selectedPurchaseIntents, setSelectedPurchaseIntents] = useState<string[]>([]);
   const [showPrintOptions, setShowPrintOptions] = useState(false);
 
@@ -174,13 +179,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     try {
       setLoading(true);
       setError(null);
-      const [productsData, categoriesData, winningPhotosData, settingsData, purchaseImagesData, purchaseIntentsData] = await Promise.all([
+      const [productsData, categoriesData, winningPhotosData, settingsData, purchaseImagesData, purchaseIntentsData, invoiceTemplatesData, productKeysData] = await Promise.all([
         productService.getAllProducts(),
         categoryService.getAllCategories(),
         winningPhotosService.getPhotos(),
         settingsService.getSettings(),
         purchaseImagesService.getAll(),
-        purchaseIntentsService.getAll()
+        purchaseIntentsService.getAll(),
+        invoiceTemplateService.getAll(),
+        productKeysService.getKeys(),
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
@@ -188,6 +195,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       setSettings(settingsData);
       setPurchaseImages(purchaseImagesData);
       setPurchaseIntents(purchaseIntentsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      setInvoiceTemplates(invoiceTemplatesData);
+      setProductKeys(productKeysData);
       setSuccess('Data loaded successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -657,12 +666,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const generateInvoiceHTML = (intent: PurchaseIntent, key: string) => {
       if (!intent) return '';
       const productForIntent = getProductForIntent(intent);
+      const brand = productForIntent?.title.toLowerCase().includes('sinki') ? 'sinki' : 'cheatloop';
+      const template = invoiceTemplates.find(t => t.brand_name === brand);
+
       const html = ReactDOMServer.renderToStaticMarkup(
           <InvoiceTemplate
               intent={intent}
               productKey={key}
               siteSettings={siteSettings}
               productPrice={productForIntent ? productForIntent.price : 'N/A'}
+              templateData={template}
           />
       );
       return `<!DOCTYPE html>${html}`;
@@ -678,11 +691,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   const handleExternalPrint = () => {
-      if (!invoiceModalIntent || !productKey) {
-          setError("Please enter a product key first.");
+      if (!invoiceModalIntent || !drawnProductKey) {
+          setError("Please draw a product key first.");
           return;
       }
-      const invoiceHTML = generateInvoiceHTML(invoiceModalIntent, productKey);
+      const invoiceHTML = generateInvoiceHTML(invoiceModalIntent, drawnProductKey);
       const printWindow = window.open('', '_blank');
       if (printWindow) {
           printWindow.document.write(invoiceHTML);
@@ -692,6 +705,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           setError("Could not open new window. Please check your browser's popup blocker settings.");
       }
       setShowPrintOptions(false);
+  };
+
+  const handleDrawKey = async () => {
+    if (!invoiceModalIntent || !invoiceModalIntent.product_id) return;
+    setIsDrawingKey(true);
+    setError(null);
+    setDrawnProductKey(null);
+    try {
+        const key = await productKeysService.claimAvailableKey(
+            invoiceModalIntent.product_id,
+            invoiceModalIntent.email,
+            invoiceModalIntent.id
+        );
+        setDrawnProductKey(key);
+        setSuccess('Key successfully drawn and assigned!');
+        setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+        setError(err.message);
+    } finally {
+        setIsDrawingKey(false);
+    }
   };
 
   const TabButton = ({ tab, label, icon: Icon }: { tab: AdminTab; label: string; icon: React.ElementType }) => (
@@ -756,10 +790,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <TabButton tab="dashboard" label="Dashboard" icon={LayoutDashboard} />
             <TabButton tab="products" label="Products" icon={Package} />
             <TabButton tab="categories" label="Categories" icon={Tag} />
+            <TabButton tab="keys" label="مفاتيح المنتجات" icon={KeyRound} />
             <TabButton tab="photos" label="Winning Photos" icon={LucideImage} />
             <TabButton tab="purchase-images" label="Purchase Images" icon={QrCode} />
             <TabButton tab="purchase-intents" label="Purchase Intents" icon={Users} />
             <TabButton tab="content" label="Site Customization" icon={Palette} />
+            <TabButton tab="invoice-templates" label="تعديل فاتورة الطبع" icon={FileText} />
             <TabButton tab="settings" label="Settings" icon={Settings} />
           </nav>
         </div>
@@ -776,6 +812,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><Users className="w-8 h-8 text-green-400" /><div><p className="text-gray-400 text-sm">Purchase Intents</p><p className="text-2xl font-bold text-white">{purchaseIntents.length}</p></div></div></div>
             </div>
           )}
+
+          {activeTab === 'keys' && (
+            <ProductKeysManager
+                products={products}
+                keys={productKeys}
+                onKeysUpdate={loadData}
+                saving={saving}
+                setSaving={setSaving}
+                setError={setError}
+                setSuccess={setSuccess}
+            />
+          )}
           
           {activeTab === 'content' && (
             <SiteContentEditor 
@@ -787,6 +835,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               setError={setError}
               setSuccess={setSuccess}
             />
+          )}
+
+          {activeTab === 'invoice-templates' && (
+            <InvoiceEditor />
           )}
 
           {activeTab === 'purchase-intents' && (
@@ -832,7 +884,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                           <td className="p-3">
                             <div className="flex items-center space-x-1">
                               <button 
-                                onClick={() => { setInvoiceModalIntent(intent); setProductKey(''); }} 
+                                onClick={() => { setInvoiceModalIntent(intent); setDrawnProductKey(null); }} 
                                 className="p-2 text-cyan-400 hover:bg-slate-600 rounded-md transition-colors" 
                                 title="Send Invoice"
                               >
@@ -1271,7 +1323,7 @@ Price: $${productForIntent?.price || 'N/A'}
 Date: ${new Date(invoiceModalIntent.created_at).toLocaleDateString()}
 
 Your Product Key:
-${productKey}
+${drawnProductKey || 'KEY_NOT_DRAWN_YET'}
 --------------------------------
 
 If you have any questions, please contact support.
@@ -1303,14 +1355,21 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <p><strong className="text-gray-400">الهاتف:</strong> {invoiceModalIntent.phone_number}</p>
 
                     <div className="pt-4">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">مفتاح المنتج *</label>
-                      <input 
-                        type="text" 
-                        value={productKey} 
-                        onChange={(e) => setProductKey(e.target.value)} 
-                        className="w-full p-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                        placeholder="أدخل مفتاح المنتج"
-                      />
+                      <label className="block text-sm font-medium text-gray-300 mb-2">مفتاح المنتج</label>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-1 p-3 bg-slate-900 border border-slate-600 rounded-xl text-white font-mono h-[46px] flex items-center">
+                            {drawnProductKey || '...'}
+                        </div>
+                        <button 
+                            onClick={handleDrawKey}
+                            disabled={isDrawingKey}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50"
+                        >
+                            {isDrawingKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                            <span>سحب مفتاح</span>
+                        </button>
+                      </div>
+                      {!drawnProductKey && <p className="text-xs text-gray-400 mt-1">اضغط على "سحب مفتاح" للحصول على مفتاح متاح لهذا المنتج.</p>}
                     </div>
                   </div>
 
@@ -1318,7 +1377,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <h4 className="text-lg font-semibold text-cyan-400 border-b border-slate-700 pb-2">معاينة الفاتورة</h4>
                     <iframe
                       ref={iframeRef}
-                      srcDoc={generateInvoiceHTML(invoiceModalIntent, productKey)}
+                      srcDoc={generateInvoiceHTML(invoiceModalIntent, drawnProductKey || '')}
                       className="mt-4 w-full h-80 bg-slate-900 rounded-lg border border-slate-700"
                       title="Invoice Preview"
                     />
@@ -1331,36 +1390,36 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                       
                       <button
                         onClick={() => {
-                            if (!productKey) {
-                                setError("يرجى إدخال مفتاح المنتج أولاً.");
+                            if (!drawnProductKey) {
+                                setError("يرجى سحب مفتاح المنتج أولاً.");
                                 return;
                             }
                             setShowPrintOptions(true);
                         }}
-                        disabled={!productKey}
-                        className={`px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={!drawnProductKey}
+                        className={`px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Printer className="w-4 h-4" />
                         <span>طباعة / PDF</span>
                       </button>
 
                       <a
-                        href={!productKey ? undefined : whatsappUrl}
+                        href={!drawnProductKey ? undefined : whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (!productKey) e.preventDefault(); }}
+                        className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!drawnProductKey) e.preventDefault(); }}
                       >
                         <MessageSquare className="w-4 h-4" />
                         <span>إرسال عبر WhatsApp</span>
                       </a>
 
                       <a
-                        href={!productKey ? undefined : gmailUrl}
+                        href={!drawnProductKey ? undefined : gmailUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKey ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (!productKey) e.preventDefault(); }}
+                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!drawnProductKey ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => { if (!drawnProductKey) e.preventDefault(); }}
                       >
                         <Mail className="w-4 h-4" />
                         <span>إرسال عبر Gmail</span>

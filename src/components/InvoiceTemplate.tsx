@@ -1,14 +1,15 @@
 import React from 'react';
-import { PurchaseIntent } from '../lib/supabase';
+import { PurchaseIntent, InvoiceTemplateData } from '../lib/supabase';
 
 interface InvoiceTemplateProps {
     intent: PurchaseIntent;
     productKey: string;
     siteSettings: Record<string, string>;
     productPrice: string | number;
+    templateData?: InvoiceTemplateData;
 }
 
-const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, siteSettings, productPrice }) => {
+const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, siteSettings, productPrice, templateData }) => {
     const invoiceDate = new Date(intent.created_at).toLocaleDateString("en-GB");
 
     const script = `
@@ -32,7 +33,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
             <head>
                 <meta charSet="utf-8" />
                 <meta name="viewport" content="width=device-width,initial-scale=1" />
-                <title>{`Invoice — ${siteSettings.site_name || 'Cheatloop'}`}</title>
+                <title>{`Invoice — ${templateData?.company_name || siteSettings.site_name || 'Cheatloop'}`}</title>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
                 <style>{`
                     :root{--bg:#0f1724;--accent:#0ea5e9;--muted:#94a3b8;--white:#e6eef8;}
@@ -101,9 +102,9 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                 <div className="invoice-wrap">
                     <div className="inv-header">
                         <div className="brand">
-                            <img src={siteSettings.site_logo_url || '/cheatloop copy.png'} alt="Logo" />
+                            <img src={templateData?.logo_url || siteSettings.site_logo_url || '/cheatloop copy.png'} alt="Logo" />
                             <div className="meta">
-                                <div className="title">{siteSettings.site_name || 'Cheatloop'}</div>
+                                <div className="title">{templateData?.company_name || siteSettings.site_name || 'Cheatloop'}</div>
                                 <div className="sub">Invoice</div>
                             </div>
                         </div>
@@ -122,8 +123,8 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                         </div>
                         <div className="panel">
                             <h4>From</h4>
-                            <div>{siteSettings.site_name || 'Cheatloop'} Team</div>
-                            <div className="muted">{siteSettings.telegram_url || 'Contact via site'}</div>
+                            <div>{templateData?.company_name || siteSettings.site_name || 'Cheatloop'} Team</div>
+                            <div className="muted">{templateData?.support_contact || siteSettings.telegram_url || 'Contact via site'}</div>
                         </div>
                     </div>
 
@@ -148,7 +149,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                         </tbody>
                     </table>
                     <div className="notes">
-                        <strong>Thank you for your purchase!</strong><br />
+                        <strong>{templateData?.footer_notes || 'Thank you for your purchase!'}</strong><br />
                         If you have any questions, please contact us via our support channels.
                         <br />
                         <a href={siteSettings.telegram_url || '#'} target="_blank" rel="noopener noreferrer">

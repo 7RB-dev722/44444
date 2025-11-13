@@ -65,6 +65,28 @@ export interface PurchaseIntent {
   phone_number: string;
 }
 
+export interface InvoiceTemplateData {
+  id: string;
+  brand_name: string;
+  logo_url: string | null;
+  company_name: string | null;
+  support_contact: string | null;
+  footer_notes: string | null;
+  created_at: string;
+}
+
+export interface ProductKey {
+  id: string;
+  created_at: string;
+  product_id: string;
+  key_value: string;
+  is_used: boolean;
+  used_by_email: string | null;
+  used_at: string | null;
+  purchase_intent_id: string | null;
+}
+
+
 export const settingsService = {
   async getSettings(): Promise<Record<string, string>> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -486,13 +508,95 @@ export const purchaseIntentsService = {
     return data || [];
   },
 
-  async deleteIntent(id: string): Promise<void> {
+  async deleteIntents(ids: string[]): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('purchase_intents')
       .delete()
-      .eq('id', id);
-    if (error) throw new Error(`Failed to delete purchase intent: ${error.message}`);
+      .in('id', ids);
+    if (error) throw new Error(`Failed to delete purchase intents: ${error.message}`);
+  },
+};
+
+export const invoiceTemplateService = {
+  async getAll(): Promise<InvoiceTemplateData[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('invoice_templates').select('*');
+    if (error) throw new Error(`Failed to fetch invoice templates: ${error.message}`);
+    return data || [];
+  },
+
+  async update(id: string, updates: Partial<InvoiceTemplateData>): Promise<InvoiceTemplateData> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('invoice_templates')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(`Failed to update invoice template: ${error.message}`);
+    return data;
+  },
+};
+
+export const productKeysService = {
+  async addKeys(productId: string, keys: string[]): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (keys.length === 0) return;
+
+    const keysToInsert = keys.map(key => ({
+      product_id: productId,
+      key_value: key.trim(),
+    }));
+
+    const { error } = await supabase.from('product_keys').insert(keysToInsert);
+    if (error) {
+      console.error('Error adding product keys:', error);
+      if (error.code === '23505') { // unique_violation
+        throw new Error('Failed to add keys. One or more keys already exist in the database.');
+      }
+      throw new Error(`Failed to add product keys: ${error.message}`);
+    }
+  },
+
+  async getKeys(filters: { productId?: string; isUsed?: boolean } = {}): Promise<ProductKey[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    let query = supabase.from('product_keys').select('*').order('created_at', { ascending: false });
+
+    if (filters.productId) {
+      query = query.eq('product_id', filters.productId);
+    }
+    if (typeof filters.isUsed === 'boolean') {
+      query = query.eq('is_used', filters.isUsed);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(`Failed to fetch product keys: ${error.message}`);
+    return data || [];
+  },
+
+  async claimAvailableKey(productId: string, email: string, intentId: string): Promise<string> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('claim_available_key', {
+      p_product_id: productId,
+      p_email: email,
+      p_intent_id: intentId,
+    });
+    if (error) {
+        console.error('Error claiming key:', error);
+        if (error.message.includes('No available keys')) {
+            throw new Error('No available keys for this product. Please add more keys.');
+        }
+        throw new Error(`Failed to claim a key: ${error.message}`);
+    }
+    return data;
+  },
+
+  async deleteKey(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('product_keys').delete().eq('id', id);
+    if (error) throw new Error(`Failed to delete key: ${error.message}`);
   },
 };
 
