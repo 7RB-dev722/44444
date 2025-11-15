@@ -73,8 +73,12 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                         td, th {
                             border-bottom-color: #dee2e6 !important;
                         }
-                        .btn, .notes a { 
+                        .btn { 
                             display: none !important; 
+                        }
+                        .notes a {
+                            color: #0ea5e9 !important;
+                            text-decoration: underline !important;
                         }
                         .invoice-footer {
                             border-top-color: #dee2e6 !important;
@@ -101,7 +105,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                     table{width:100%;border-collapse:collapse;margin-top:12px;color:var(--white);}
                     th,td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.05);text-align:right;}
                     th{color:var(--muted);font-size:13px;font-weight:600}
-                    .keybox{background:rgba(14,165,233,0.1);padding:10px;border-radius:8px;display:flex;justify-content:center;align-items:center;margin-top:8px;direction:ltr;}
+                    .keybox{background:rgba(14,165,233,0.1);padding:10px;border-radius:8px;display:flex;justify-content:center;align-items:center;margin-top:8px;direction:ltr;min-height:50px;}
                     .key{font-family:monospace;font-weight:700;font-size:15px;letter-spacing:1px;text-align:center;word-break:break-all;}
                     .btn{border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--accent),#6366f1);color:#fff;}
                     .notes{margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6}
@@ -137,7 +141,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                             </div>
                             <div className="panel">
                                 <h4>From</h4>
-                                <div>{templateData?.company_name || siteSettings.site_name || 'Cheatloop Team'}</div>
+                                <div>{templateData?.company_name || 'Cheatloop Team'}</div>
                                 <div className="muted">{templateData?.support_contact || siteSettings.telegram_url || 'Contact via site'}</div>
                             </div>
                         </div>
@@ -164,10 +168,10 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                         </table>
                         <div className="notes">
                             <strong>{templateData?.footer_notes || 'Thank you for your purchase!'}</strong><br />
-                            If you have any questions, please contact us via our support channels.
+                            If you have any questions, contact us on Discord:
                             <br />
-                            <a href={siteSettings.telegram_url || '#'} target="_blank" rel="noopener noreferrer">
-                                <button className="btn" style={{ marginTop: '8px' }}>Contact Support</button>
+                            <a href="https://discord.gg/pcgamers" target="_blank" rel="noopener noreferrer" style={{ marginTop: '8px', display: 'inline-block' }}>
+                                https://discord.gg/pcgamers
                             </a>
                         </div>
                     </div>
