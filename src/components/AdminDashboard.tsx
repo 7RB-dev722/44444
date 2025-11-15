@@ -794,13 +794,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             throw new Error("Could not find invoice content to generate PDF.");
         }
 
+        const originalStyles = {
+            width: invoiceElement.style.width,
+            maxWidth: invoiceElement.style.maxWidth,
+            height: invoiceElement.style.height,
+            minHeight: invoiceElement.style.minHeight,
+        };
+
+        const a4_ratio = 297 / 210; // Height / Width
+        const pdfWidthPx = 900;
+        const pdfHeightPx = Math.floor(pdfWidthPx * a4_ratio);
+        
+        invoiceElement.style.width = `${pdfWidthPx}px`;
+        invoiceElement.style.maxWidth = `${pdfWidthPx}px`;
+        invoiceElement.style.height = `${pdfHeightPx}px`;
+        invoiceElement.style.minHeight = `${pdfHeightPx}px`;
+
         const canvas = await html2canvas(invoiceElement, {
             scale: 2,
             backgroundColor: '#0f1724',
             useCORS: true,
         });
 
+        // Restore original styles
+        invoiceElement.style.width = originalStyles.width;
+        invoiceElement.style.maxWidth = originalStyles.maxWidth;
+        invoiceElement.style.height = originalStyles.height;
+        invoiceElement.style.minHeight = originalStyles.minHeight;
+
         const imgData = canvas.toDataURL('image/png');
+        
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'pt',
@@ -809,29 +832,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        const margin = 40;
-
-        const contentWidth = pdfWidth - margin * 2;
-        const contentHeight = pdfHeight - margin * 2;
-
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const canvasRatio = canvasWidth / canvasHeight;
-        const contentRatio = contentWidth / contentHeight;
-
-        let finalWidth, finalHeight;
-        if (canvasRatio > contentRatio) {
-            finalWidth = contentWidth;
-            finalHeight = finalWidth / canvasRatio;
-        } else {
-            finalHeight = contentHeight;
-            finalWidth = finalHeight * canvasRatio;
-        }
-
-        const x = (pdfWidth - finalWidth) / 2;
-        const y = (pdfHeight - finalHeight) / 2;
-
-        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
         pdf.save(`invoice-${invoiceModalIntent.id.substring(0, 8)}.pdf`);
 
         setSuccess("تم تحميل ملف PDF. جاري فتح Gmail لإرساله الآن...");
@@ -1368,7 +1371,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -1528,13 +1531,13 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                             type="text"
                             value={productKeyForInvoice || ''}
                             onChange={(e) => setProductKeyForInvoice(e.target.value)}
-                            className="flex-1 p-3 bg-slate-900 border border-slate-600 rounded-xl text-white font-mono h-[46px]"
+                            className="flex-1 p-3 bg-slate-900 border-2 border-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 rounded-xl text-white font-mono text-center tracking-widest h-[46px]"
                             placeholder="أدخل المفتاح يدويًا أو اسحبه"
                         />
                         <button 
                             onClick={handleDrawKey}
                             disabled={isDrawingKey || availableKeys === 0}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-4 h-[46px] bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isDrawingKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                             <span>سحب مفتاح</span>

@@ -40,10 +40,15 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                     *{box-sizing:border-box}
                     body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;margin:0;background:linear-gradient(180deg,#071021 0%,#071525 100%);color:var(--white);padding:24px;}
                     @media print {
+                        @page {
+                            size: auto;
+                            margin: 0mm;
+                        }
                         body { 
                             background: #ffffff !important; 
                             color: #000000 !important; 
                             padding: 20px; 
+                            margin: 0;
                             -webkit-print-color-adjust: exact;
                             color-adjust: exact;
                         }
@@ -71,8 +76,14 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                         .btn, .notes a { 
                             display: none !important; 
                         }
+                        .invoice-footer {
+                            border-top-color: #dee2e6 !important;
+                        }
+                        .invoice-footer a {
+                            color: #0ea5e9 !important;
+                        }
                     }
-                    .invoice-wrap{max-width:900px;margin:0 auto;background:rgba(255,255,255,0.03);border-radius:14px;padding:24px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.05);}
+                    .invoice-wrap{max-width:900px;margin:0 auto;background:rgba(255,255,255,0.03);border-radius:14px;padding:24px;box-shadow:0 8px 30px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;}
                     .inv-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
                     .brand{display:flex;align-items:center;gap:14px;}
                     .brand img{width:72px;height:72px;border-radius:10px;object-fit:cover;}
@@ -94,66 +105,76 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                     .key{font-family:monospace;font-weight:700;font-size:15px;letter-spacing:1px;text-align:center;word-break:break-all;}
                     .btn{border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--accent),#6366f1);color:#fff;}
                     .notes{margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6}
+                    .invoice-footer{text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.06);}
+                    .invoice-footer a{color:var(--accent);text-decoration:none;font-size:14px;font-weight:600;}
                     a{color:var(--accent); text-decoration:none;}
                     @media(max-width:700px){.cols{grid-template-columns:1fr}}
                 `}</style>
             </head>
             <body>
                 <div className="invoice-wrap">
-                    <div className="inv-header">
-                        <div className="brand">
-                            <img src={templateData?.logo_url || siteSettings.site_logo_url || '/cheatloop copy.png'} alt="Logo" />
-                            <div className="meta">
-                                <div className="title">{templateData?.company_name || siteSettings.site_name || 'Cheatloop'}</div>
-                                <div className="sub">Invoice</div>
+                    <div>
+                        <div className="inv-header">
+                            <div className="brand">
+                                <img src={templateData?.logo_url || siteSettings.site_logo_url || '/cheatloop copy.png'} alt="Logo" />
+                                <div className="meta">
+                                    <div className="title">{templateData?.company_name || siteSettings.site_name || 'Cheatloop'}</div>
+                                    <div className="sub">Invoice</div>
+                                </div>
+                            </div>
+                            <div className="inv-meta">
+                                <div className="inv-title">Invoice</div>
+                                <div className="small" id="invoiceDate">Date: {invoiceDate}</div>
                             </div>
                         </div>
-                        <div className="inv-meta">
-                            <div className="inv-title">Invoice</div>
-                            <div className="small" id="invoiceDate">Date: {invoiceDate}</div>
+                        <hr />
+                        <div className="cols">
+                            <div className="panel">
+                                <h4>Billed To</h4>
+                                <div>{intent.email}</div>
+                                <div className="muted">{intent.phone_number}</div>
+                                <div className="muted" style={{ marginTop: '6px' }}>Country: {intent.country}</div>
+                            </div>
+                            <div className="panel">
+                                <h4>From</h4>
+                                <div>{templateData?.company_name || siteSettings.site_name || 'Cheatloop Team'}</div>
+                                <div className="muted">{templateData?.support_contact || siteSettings.telegram_url || 'Contact via site'}</div>
+                            </div>
                         </div>
-                    </div>
-                    <hr />
-                    <div className="cols">
-                        <div className="panel">
-                            <h4>Billed To</h4>
-                            <div>{intent.email}</div>
-                            <div className="muted">{intent.phone_number}</div>
-                            <div className="muted" style={{ marginTop: '6px' }}>Country: {intent.country}</div>
-                        </div>
-                        <div className="panel">
-                            <h4>From</h4>
-                            <div>{templateData?.company_name || siteSettings.site_name || 'Cheatloop'} Team</div>
-                            <div className="muted">{templateData?.support_contact || siteSettings.telegram_url || 'Contact via site'}</div>
-                        </div>
-                    </div>
 
-                    <div className="panel" style={{marginTop: '20px'}}>
-                        <h4>Product</h4>
-                        <div><strong>{intent.product_title}</strong></div>
-                        <div className="keybox">
-                            <div className="key" id="productKey"></div>
+                        <div className="panel" style={{marginTop: '20px'}}>
+                            <h4>Product</h4>
+                            <div><strong>{intent.product_title}</strong></div>
+                            <div className="keybox">
+                                <div className="key" id="productKey"></div>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr><th>Product</th><th>Quantity</th><th>Price</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{textAlign: 'left'}}>{intent.product_title}</td>
+                                    <td>1</td>
+                                    <td>{typeof productPrice === 'number' ? `$${productPrice}` : productPrice}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div className="notes">
+                            <strong>{templateData?.footer_notes || 'Thank you for your purchase!'}</strong><br />
+                            If you have any questions, please contact us via our support channels.
+                            <br />
+                            <a href={siteSettings.telegram_url || '#'} target="_blank" rel="noopener noreferrer">
+                                <button className="btn" style={{ marginTop: '8px' }}>Contact Support</button>
+                            </a>
                         </div>
                     </div>
-
-                    <table>
-                        <thead>
-                            <tr><th>Product</th><th>Quantity</th><th>Price</th></tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style={{textAlign: 'left'}}>{intent.product_title}</td>
-                                <td>1</td>
-                                <td>{typeof productPrice === 'number' ? `$${productPrice}` : productPrice}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div className="notes">
-                        <strong>{templateData?.footer_notes || 'Thank you for your purchase!'}</strong><br />
-                        If you have any questions, please contact us via our support channels.
-                        <br />
-                        <a href={siteSettings.telegram_url || '#'} target="_blank" rel="noopener noreferrer">
-                            <button className="btn" style={{ marginTop: '8px' }}>Contact Support</button>
+                    <div style={{ flexGrow: 1 }}></div>
+                    <div className="invoice-footer">
+                        <a href="https://cheatloop.shop" target="_blank" rel="noopener noreferrer">
+                            cheatloop.shop
                         </a>
                     </div>
                 </div>
