@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound, Clock, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound, Clock, Search, Filter, TimerOff } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase, invoiceTemplateService, InvoiceTemplateData, ProductKey, productKeysService } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
@@ -27,7 +27,7 @@ const AVAILABLE_IMAGES = [
 
 const WINNING_PHOTO_PRODUCTS = ['Cheatloop PUBG', 'Cheatloop CODM', 'Sinki'];
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys' | 'users';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys' | 'users' | 'expired-keys';
 
 interface PhotoItemProps {
   photo: WinningPhoto;
@@ -136,6 +136,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [showPrintOptions, setShowPrintOptions] = useState(false);
   const [purchaseIntentFilter, setPurchaseIntentFilter] = useState<'pending' | 'completed'>('pending');
   const [purchaseIntentSearchTerm, setPurchaseIntentSearchTerm] = useState('');
+  const [expiredKeysFilter, setExpiredKeysFilter] = useState<{ productId: string; searchTerm: string }>({ productId: 'all', searchTerm: '' });
 
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'created_at' | 'updated_at'>>({
@@ -193,6 +194,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   }, [pendingIntents, purchaseIntentSearchTerm]);
 
   const intentsToDisplay = purchaseIntentFilter === 'pending' ? filteredPendingIntents : completedIntents;
+
+  const expiredKeys = useMemo(() => {
+    const now = new Date();
+    return productKeys
+        .filter(key => {
+            if (!key.is_used || !key.used_at) {
+                return false;
+            }
+            const usedDate = new Date(key.used_at);
+            const expiryDate = new Date(usedDate);
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            return expiryDate < now;
+        })
+        .sort((a, b) => new Date(b.used_at!).getTime() - new Date(a.used_at!).getTime());
+  }, [productKeys]);
+
+  const filteredExpiredKeys = useMemo(() => {
+    return expiredKeys.filter(key => {
+        const productMatch = expiredKeysFilter.productId === 'all' || key.product_id === expiredKeysFilter.productId;
+        const searchMatch = !expiredKeysFilter.searchTerm || (key.used_by_email && key.used_by_email.toLowerCase().includes(expiredKeysFilter.searchTerm.toLowerCase()));
+        return productMatch && searchMatch;
+    });
+  }, [expiredKeys, expiredKeysFilter]);
 
 
   useEffect(() => {
@@ -699,6 +723,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   const getCategoryName = (categoryId: string) => categories.find(c => c.id === categoryId)?.name || 'Uncategorized';
+  const getProductName = (productId: string) => products.find(p => p.id === productId)?.title || 'Unknown Product';
+  const maskKey = (key: string) => {
+    if (key.length <= 8) return key;
+    return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
+  };
   const getFilteredImages = () => selectedImageCategory === 'all' ? AVAILABLE_IMAGES : AVAILABLE_IMAGES.filter(img => img.category === selectedImageCategory);
 
   const groupedWinningPhotos = WINNING_PHOTO_PRODUCTS.reduce((acc, productName) => {
@@ -928,6 +957,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
             <TabButton tab="products" label="Products" icon={Package} />
             <TabButton tab="categories" label="Categories" icon={Tag} />
             <TabButton tab="keys" label="مفاتيح المنتجات" icon={KeyRound} />
+            <TabButton tab="expired-keys" label="المفاتيح المنتهية" icon={TimerOff} />
             <TabButton tab="users" label="User Management" icon={Users} />
             <TabButton tab="photos" label="Winning Photos" icon={LucideImage} />
             <TabButton tab="purchase-images" label="Purchase Images" icon={QrCode} />
@@ -965,6 +995,70 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                 setError={setError}
                 setSuccess={setSuccess}
             />
+          )}
+
+          {activeTab === 'expired-keys' && (
+            <div>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                    <h3 className="text-xl font-bold text-white">المفاتيح المنتهية الصلاحية ({expiredKeys.length})</h3>
+                    <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-gray-400" />
+                            <select 
+                                value={expiredKeysFilter.productId} 
+                                onChange={e => setExpiredKeysFilter({...expiredKeysFilter, productId: e.target.value})} 
+                                className="p-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                            >
+                                <option value="all">كل المنتجات</option>
+                                {products.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                            </select>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="ابحث بالإيميل..."
+                                value={expiredKeysFilter.searchTerm}
+                                onChange={e => setExpiredKeysFilter({...expiredKeysFilter, searchTerm: e.target.value})}
+                                className="p-2 pl-9 rtl:pr-9 rtl:pl-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-slate-700/50">
+                                <tr>
+                                    <th className="p-3 text-left font-medium text-gray-300">المنتج</th>
+                                    <th className="p-3 text-left font-medium text-gray-300">المستخدم (الإيميل)</th>
+                                    <th className="p-3 text-left font-medium text-gray-300">المفتاح</th>
+                                    <th className="p-3 text-left font-medium text-gray-300">تاريخ الاستخدام</th>
+                                    <th className="p-3 text-left font-medium text-gray-300">تاريخ الانتهاء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredExpiredKeys.map(key => {
+                                    const usedDate = new Date(key.used_at!);
+                                    const expiryDate = new Date(usedDate);
+                                    expiryDate.setDate(expiryDate.getDate() + 30);
+
+                                    return (
+                                        <tr key={key.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
+                                            <td className="p-3 text-white">{getProductName(key.product_id)}</td>
+                                            <td className="p-3 text-gray-400">{key.used_by_email}</td>
+                                            <td className="p-3 text-gray-300 font-mono" title={key.key_value}>{maskKey(key.key_value)}</td>
+                                            <td className="p-3 text-gray-400">{usedDate.toLocaleDateString()}</td>
+                                            <td className="p-3 text-red-400 font-medium">{expiryDate.toLocaleDateString()}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        {filteredExpiredKeys.length === 0 && <p className="text-center text-gray-500 py-8">لا توجد مفاتيح منتهية الصلاحية تطابق الفلاتر الحالية.</p>}
+                    </div>
+                </div>
+            </div>
           )}
           
           {activeTab === 'content' && (
@@ -1371,7 +1465,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
