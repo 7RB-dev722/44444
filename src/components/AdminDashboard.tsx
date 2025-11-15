@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound } from 'lucide-react';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound, Clock, Search } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase, invoiceTemplateService, InvoiceTemplateData, ProductKey, productKeysService } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
@@ -134,6 +134,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [isDrawingKey, setIsDrawingKey] = useState(false);
   const [selectedPurchaseIntents, setSelectedPurchaseIntents] = useState<string[]>([]);
   const [showPrintOptions, setShowPrintOptions] = useState(false);
+  const [purchaseIntentFilter, setPurchaseIntentFilter] = useState<'pending' | 'completed'>('pending');
+  const [purchaseIntentSearchTerm, setPurchaseIntentSearchTerm] = useState('');
 
 
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'created_at' | 'updated_at'>>({
@@ -157,6 +159,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         return acc;
     }, {} as Record<string, number>);
   }, [products, productKeys]);
+
+  const { pendingIntents, completedIntents } = useMemo(() => {
+    const keyMap = new Map<string, ProductKey>();
+    productKeys.forEach(key => {
+        if (key.purchase_intent_id) {
+            keyMap.set(key.purchase_intent_id, key);
+        }
+    });
+
+    const pending: PurchaseIntent[] = [];
+    const completed: (PurchaseIntent & { productKey: ProductKey })[] = [];
+
+    purchaseIntents.forEach(intent => {
+        const associatedKey = keyMap.get(intent.id);
+        if (associatedKey) {
+            completed.push({ ...intent, productKey: associatedKey });
+        } else {
+            pending.push(intent);
+        }
+    });
+
+    return { pendingIntents: pending, completedIntents: completed };
+  }, [purchaseIntents, productKeys]);
+
+  const filteredPendingIntents = useMemo(() => {
+    if (!purchaseIntentSearchTerm) {
+        return pendingIntents;
+    }
+    return pendingIntents.filter(intent => 
+        intent.email.toLowerCase().includes(purchaseIntentSearchTerm.toLowerCase())
+    );
+  }, [pendingIntents, purchaseIntentSearchTerm]);
+
+  const intentsToDisplay = purchaseIntentFilter === 'pending' ? filteredPendingIntents : completedIntents;
 
 
   useEffect(() => {
@@ -635,10 +671,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
 
   const handleSelectAllPurchaseIntents = (shouldSelect: boolean) => {
+    const intentsToSelect = (purchaseIntentFilter === 'pending' ? filteredPendingIntents : completedIntents).map(i => i.id);
     if (shouldSelect) {
-      setSelectedPurchaseIntents(purchaseIntents.map(intent => intent.id));
+        setSelectedPurchaseIntents(prev => [...new Set([...prev, ...intentsToSelect])]);
     } else {
-      setSelectedPurchaseIntents([]);
+        setSelectedPurchaseIntents(prev => prev.filter(id => !intentsToSelect.includes(id)));
     }
   };
 
@@ -731,6 +768,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         );
         setProductKeyForInvoice(key);
         setSuccess('Key successfully drawn and assigned!');
+        await loadData();
         setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
         setError(err.message);
@@ -944,7 +982,47 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
 
           {activeTab === 'purchase-intents' && (
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Purchase Intents ({purchaseIntents.length})</h3>
+              <h3 className="text-xl font-bold text-white mb-4">طلبات الشراء</h3>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex items-center space-x-2 bg-slate-900/50 backdrop-blur-sm p-2 rounded-xl">
+                  <button
+                    onClick={() => { setPurchaseIntentFilter('pending'); setPurchaseIntentSearchTerm(''); }}
+                    className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      purchaseIntentFilter === 'pending'
+                        ? 'bg-yellow-500 text-white shadow-md shadow-yellow-500/20'
+                        : 'bg-slate-700/50 text-gray-300 hover:bg-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>قيد الانتظار ({pendingIntents.length})</span>
+                  </button>
+                  <button
+                    onClick={() => { setPurchaseIntentFilter('completed'); setPurchaseIntentSearchTerm(''); }}
+                    className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      purchaseIntentFilter === 'completed'
+                        ? 'bg-green-500 text-white shadow-md shadow-green-500/20'
+                        : 'bg-slate-700/50 text-gray-300 hover:bg-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>مكتمل ({completedIntents.length})</span>
+                  </button>
+                </div>
+
+                {purchaseIntentFilter === 'pending' && (
+                    <div className="relative">
+                        <Search className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="ابحث بالإيميل..."
+                            value={purchaseIntentSearchTerm}
+                            onChange={(e) => setPurchaseIntentSearchTerm(e.target.value)}
+                            className="bg-slate-700 border border-slate-600 rounded-xl text-white pl-10 rtl:pr-10 rtl:pl-4 pr-4 py-2 focus:outline-none focus:border-cyan-500"
+                        />
+                    </div>
+                )}
+              </div>
+
               <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -954,20 +1032,24 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                           <input
                             type="checkbox"
                             className="w-4 h-4 text-cyan-600 bg-slate-700 border-slate-600 rounded focus:ring-cyan-500"
-                            checked={selectedPurchaseIntents.length === purchaseIntents.length && purchaseIntents.length > 0}
+                            checked={selectedPurchaseIntents.length === intentsToDisplay.length && intentsToDisplay.length > 0}
                             onChange={(e) => handleSelectAllPurchaseIntents(e.target.checked)}
                           />
                         </th>
                         <th className="p-3 text-left font-medium text-gray-300">Date</th>
                         <th className="p-3 text-left font-medium text-gray-300">Product</th>
-                        <th className="p-3 text-left font-medium text-gray-300">Country</th>
                         <th className="p-3 text-left font-medium text-gray-300">Email</th>
-                        <th className="p-3 text-left font-medium text-gray-300">Phone</th>
+                        {purchaseIntentFilter === 'completed' && (
+                          <>
+                            <th className="p-3 text-left font-medium text-gray-300">Assigned Key</th>
+                            <th className="p-3 text-left font-medium text-gray-300">Assigned At</th>
+                          </>
+                        )}
                         <th className="p-3 text-left font-medium text-gray-300">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {purchaseIntents.map((intent) => (
+                      {intentsToDisplay.map((intent: PurchaseIntent | (PurchaseIntent & { productKey: ProductKey })) => (
                         <tr key={intent.id} className={`border-b border-slate-700 transition-colors ${selectedPurchaseIntents.includes(intent.id) ? 'bg-cyan-900/30' : 'hover:bg-slate-700/30'}`}>
                           <td className="p-3 text-center">
                             <input
@@ -979,15 +1061,19 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                           </td>
                           <td className="p-3 text-gray-400">{new Date(intent.created_at).toLocaleString()}</td>
                           <td className="p-3 text-white font-medium">{intent.product_title}</td>
-                          <td className="p-3 text-gray-300">{intent.country}</td>
                           <td className="p-3 text-gray-300">{intent.email}</td>
-                          <td className="p-3 text-gray-300">{intent.phone_number}</td>
+                          {purchaseIntentFilter === 'completed' && 'productKey' in intent && (
+                            <>
+                              <td className="p-3 text-gray-300 font-mono">{intent.productKey.key_value}</td>
+                              <td className="p-3 text-gray-400">{intent.productKey.used_at ? new Date(intent.productKey.used_at).toLocaleString() : 'N/A'}</td>
+                            </>
+                          )}
                           <td className="p-3">
                             <div className="flex items-center space-x-1">
                               <button 
-                                onClick={() => { setInvoiceModalIntent(intent); setProductKeyForInvoice(null); }} 
+                                onClick={() => { setInvoiceModalIntent(intent); setProductKeyForInvoice('productKey' in intent ? intent.productKey.key_value : null); }} 
                                 className="p-2 text-cyan-400 hover:bg-slate-600 rounded-md transition-colors" 
-                                title="Send Invoice"
+                                title="Open Invoice"
                               >
                                 <Send className="w-4 h-4" />
                               </button>
@@ -998,7 +1084,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     </tbody>
                   </table>
                 </div>
-                {purchaseIntents.length === 0 && <p className="text-center text-gray-500 py-8">No purchase intents recorded yet.</p>}
+                {intentsToDisplay.length === 0 && <p className="text-center text-gray-500 py-8">{purchaseIntentSearchTerm ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد سجلات في هذه الفئة.'}</p>}
               </div>
             </div>
           )}

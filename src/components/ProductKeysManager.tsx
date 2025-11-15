@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Product, ProductKey, productKeysService } from '../lib/supabase';
-import { Plus, Trash2, Filter, Undo2, KeyRound, CheckCircle, XCircle, Copy } from 'lucide-react';
+import { Plus, Trash2, Filter, Undo2, KeyRound, CheckCircle, XCircle, Copy, Search } from 'lucide-react';
 
 interface ProductKeysManagerProps {
   products: Product[];
@@ -15,6 +15,7 @@ interface ProductKeysManagerProps {
 const ProductKeysManager: React.FC<ProductKeysManagerProps> = ({ products, keys, onKeysUpdate, saving, setSaving, setError, setSuccess }) => {
   const [newKeysData, setNewKeysData] = useState({ productId: '', keys: '' });
   const [filters, setFilters] = useState({ productId: 'all', status: 'all' });
+  const [keySearchTerm, setKeySearchTerm] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleAddKeys = async () => {
@@ -141,15 +142,19 @@ const ProductKeysManager: React.FC<ProductKeysManagerProps> = ({ products, keys,
       .filter(key => {
         const productMatch = filters.productId === 'all' || key.product_id === filters.productId;
         const statusMatch = filters.status === 'all' || (filters.status === 'used' ? key.is_used : !key.is_used);
-        return productMatch && statusMatch;
+        const searchMatch = !keySearchTerm || (key.used_by_email && key.used_by_email.toLowerCase().includes(keySearchTerm.toLowerCase()));
+        return productMatch && statusMatch && searchMatch;
       })
       .sort((a, b) => {
-        if (a.is_used === b.is_used) {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (a.is_used !== b.is_used) {
+            return a.is_used ? 1 : -1;
         }
-        return a.is_used ? 1 : -1;
+        if (a.is_used) {
+            return new Date(b.used_at!).getTime() - new Date(a.used_at!).getTime();
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-  }, [keys, filters]);
+  }, [keys, filters, keySearchTerm]);
 
   const getProductName = (productId: string) => products.find(p => p.id === productId)?.title || 'Unknown Product';
   
@@ -214,7 +219,7 @@ const ProductKeysManager: React.FC<ProductKeysManagerProps> = ({ products, keys,
       <div className="bg-slate-800 rounded-2xl border border-slate-700">
         <div className="p-4 border-b border-slate-700 flex flex-wrap items-center justify-between gap-4">
             <h3 className="text-xl font-bold text-white">إدارة مفاتيح المنتجات ({filteredKeys.length})</h3>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-gray-400" />
                     <select value={filters.productId} onChange={e => setFilters({...filters, productId: e.target.value})} className="p-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500">
@@ -226,6 +231,16 @@ const ProductKeysManager: React.FC<ProductKeysManagerProps> = ({ products, keys,
                         <option value="available">متاح</option>
                         <option value="used">مستخدم</option>
                     </select>
+                </div>
+                <div className="relative">
+                    <Search className="absolute left-3 rtl:right-3 rtl:left-auto top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                        type="text"
+                        placeholder="ابحث بالإيميل..."
+                        value={keySearchTerm}
+                        onChange={e => setKeySearchTerm(e.target.value)}
+                        className="p-2 pl-9 rtl:pr-9 rtl:pl-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500"
+                    />
                 </div>
             </div>
         </div>
@@ -275,7 +290,7 @@ const ProductKeysManager: React.FC<ProductKeysManagerProps> = ({ products, keys,
               ))}
             </tbody>
           </table>
-          {filteredKeys.length === 0 && <p className="text-center text-gray-500 py-8">لا توجد مفاتيح تطابق الفلاتر الحالية.</p>}
+          {filteredKeys.length === 0 && <p className="text-center text-gray-500 py-8">{keySearchTerm ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد مفاتيح تطابق الفلاتر الحالية.'}</p>}
         </div>
       </div>
     </div>
