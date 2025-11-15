@@ -28,7 +28,20 @@ const AdminPanel: React.FC = () => {
 
   const handleLogout = async () => {
     if (supabase) {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      // The AuthSessionMissingError can occur if the session is already invalidated
+      // (e.g., in another tab or due to expiration). In this case, we can treat
+      // it as a successful logout from the UI's perspective.
+      if (error && error.name !== 'AuthSessionMissingError') {
+        console.error('Error logging out:', error);
+        alert(`Failed to log out: ${error.message}`);
+      } else {
+        // For a successful logout or a "session missing" error,
+        // manually set the session to null to trigger a re-render to the login page.
+        // This is more efficient than a full page reload.
+        setSession(null);
+      }
     }
   };
   

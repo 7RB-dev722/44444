@@ -6,10 +6,13 @@ import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
 import InvoiceEditor from './InvoiceEditor';
 import ProductKeysManager from './ProductKeysManager';
+import UserManagement from './UserManagement';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { useSettings } from '../contexts/SettingsContext';
 import InvoiceTemplate from './InvoiceTemplate';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -24,7 +27,7 @@ const AVAILABLE_IMAGES = [
 
 const WINNING_PHOTO_PRODUCTS = ['Cheatloop PUBG', 'Cheatloop CODM', 'Sinki'];
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys' | 'users';
 
 interface PhotoItemProps {
   photo: WinningPhoto;
@@ -736,6 +739,91 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const handleSendPdfToGmail = async () => {
+    if (!invoiceModalIntent || !productKeyForInvoice || !iframeRef.current?.contentWindow) {
+        setError("يرجى التأكد من تحميل الفاتورة بالكامل مع مفتاح المنتج.");
+        return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+        const iframeDoc = iframeRef.current.contentWindow.document;
+        const invoiceElement = iframeDoc.querySelector('.invoice-wrap') as HTMLElement;
+
+        if (!invoiceElement) {
+            throw new Error("Could not find invoice content to generate PDF.");
+        }
+
+        const canvas = await html2canvas(invoiceElement, {
+            scale: 2,
+            backgroundColor: '#0f1724',
+            useCORS: true,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'pt',
+            format: 'a4'
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const margin = 40;
+
+        const contentWidth = pdfWidth - margin * 2;
+        const contentHeight = pdfHeight - margin * 2;
+
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+        const contentRatio = contentWidth / contentHeight;
+
+        let finalWidth, finalHeight;
+        if (canvasRatio > contentRatio) {
+            finalWidth = contentWidth;
+            finalHeight = finalWidth / canvasRatio;
+        } else {
+            finalHeight = contentHeight;
+            finalWidth = finalHeight * canvasRatio;
+        }
+
+        const x = (pdfWidth - finalWidth) / 2;
+        const y = (pdfHeight - finalHeight) / 2;
+
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`invoice-${invoiceModalIntent.id.substring(0, 8)}.pdf`);
+
+        setSuccess("تم تحميل ملف PDF. جاري فتح Gmail لإرساله الآن...");
+        setTimeout(() => setSuccess(null), 5000);
+
+        const productForIntent = getProductForIntent(invoiceModalIntent);
+        const invoiceBodyEn = `
+Hello,
+
+Thank you for your purchase!
+
+Please find the invoice for your purchase of "${invoiceModalIntent.product_title}" attached to this email.
+
+Product Key: ${productKeyForInvoice}
+
+Best regards,
+The ${siteSettings.site_name || 'Cheatloop'} Team
+`;
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${invoiceModalIntent.email}&su=${encodeURIComponent(`Your invoice for ${invoiceModalIntent.product_title}`)}&body=${encodeURIComponent(invoiceBodyEn)}`;
+        window.open(gmailUrl, '_blank');
+
+    } catch (err: any) {
+        console.error("PDF Generation Error:", err);
+        setError("فشل إنشاء ملف PDF. يرجى تجربة خيار الطباعة العادي.");
+    } finally {
+        setSaving(false);
+    }
+  };
+
+
   const TabButton = ({ tab, label, icon: Icon }: { tab: AdminTab; label: string; icon: React.ElementType }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -799,9 +887,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             <TabButton tab="products" label="Products" icon={Package} />
             <TabButton tab="categories" label="Categories" icon={Tag} />
             <TabButton tab="keys" label="مفاتيح المنتجات" icon={KeyRound} />
+            <TabButton tab="users" label="User Management" icon={Users} />
             <TabButton tab="photos" label="Winning Photos" icon={LucideImage} />
             <TabButton tab="purchase-images" label="Purchase Images" icon={QrCode} />
-            <TabButton tab="purchase-intents" label="Purchase Intents" icon={Users} />
+            <TabButton tab="purchase-intents" label="Purchase Intents" icon={CreditCard} />
             <TabButton tab="content" label="Site Customization" icon={Palette} />
             <TabButton tab="invoice-templates" label="تعديل فاتورة الطبع" icon={FileText} />
             <TabButton tab="settings" label="Settings" icon={Settings} />
@@ -819,6 +908,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><ImageIcon className="w-8 h-8 text-yellow-400" /><div><p className="text-gray-400 text-sm">Winning Photos</p><p className="text-2xl font-bold text-white">{winningPhotos.length}</p></div></div></div>
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700"><div className="flex items-center space-x-3"><Users className="w-8 h-8 text-green-400" /><div><p className="text-gray-400 text-sm">Purchase Intents</p><p className="text-2xl font-bold text-white">{purchaseIntents.length}</p></div></div></div>
             </div>
+          )}
+
+          {activeTab === 'users' && (
+            <UserManagement />
           )}
 
           {activeTab === 'keys' && (
@@ -1189,7 +1282,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -1320,29 +1413,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         const productForIntent = getProductForIntent(invoiceModalIntent);
         const availableKeys = productForIntent ? availableKeysCount[productForIntent.id] || 0 : 0;
         
-        const invoiceBodyEn = `
-Hello,
-
-Thank you for your purchase!
-
-Here are your invoice details:
---------------------------------
-Product: ${invoiceModalIntent.product_title}
-Price: $${productForIntent?.price || 'N/A'}
-Date: ${new Date(invoiceModalIntent.created_at).toLocaleDateString()}
-
-Your Product Key:
-${productKeyForInvoice || 'KEY_NOT_ENTERED_YET'}
---------------------------------
-
-If you have any questions, please contact support.
-
-Best regards,
-The ${siteSettings.site_name || 'Cheatloop'} Team
-`;
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${invoiceModalIntent.email}&su=${encodeURIComponent(`Your invoice and product key for ${invoiceModalIntent.product_title}`)}&body=${encodeURIComponent(invoiceBodyEn)}`;
         const whatsappPhoneNumber = invoiceModalIntent.phone_number?.replace(/\D/g, '') || '';
-        const whatsappUrl = `https://wa.me/${whatsappPhoneNumber}?text=${encodeURIComponent(invoiceBodyEn)}`;
+        const whatsappUrl = `https://wa.me/${whatsappPhoneNumber}?text=${encodeURIComponent(`Hello, here is your invoice and product key for ${invoiceModalIntent.product_title}`)}`;
 
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1431,16 +1503,14 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                         <span>إرسال عبر WhatsApp</span>
                       </a>
 
-                      <a
-                        href={!productKeyForInvoice ? undefined : gmailUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKeyForInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => { if (!productKeyForInvoice) e.preventDefault(); }}
+                      <button
+                        onClick={handleSendPdfToGmail}
+                        disabled={!productKeyForInvoice || saving}
+                        className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-2 ${!productKeyForInvoice || saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        <Mail className="w-4 h-4" />
-                        <span>إرسال عبر Gmail</span>
-                      </a>
+                        {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                        <span>{saving ? 'جاري إنشاء PDF...' : 'إرسال PDF عبر Gmail'}</span>
+                      </button>
                     </div>
                 </div>
 

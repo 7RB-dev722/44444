@@ -1,13 +1,32 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Please check your .env file.');
+  console.error('Missing Supabase URL or Anon Key. Please check your .env file.');
 }
 
-export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+export const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+// Create a separate, isolated client for service role operations.
+// This is a safer pattern than mixing keys.
+const createAdminClient = () => {
+  // Check if the URL is missing, or if the key is missing or a placeholder.
+  if (!supabaseUrl || !supabaseServiceRoleKey || supabaseServiceRoleKey.includes('YOUR_API_KEY') || supabaseServiceRoleKey.startsWith('Y***')) {
+    return null;
+  }
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
+
+const supabaseAdmin = createAdminClient();
+
 
 export interface Category {
   id: string;
@@ -86,6 +105,39 @@ export interface ProductKey {
   purchase_intent_id: string | null;
 }
 
+export interface AuthUser {
+    id: string;
+    email?: string;
+    phone?: string;
+    created_at: string;
+    last_sign_in_at?: string;
+}
+
+export const userService = {
+  async getUsers(): Promise<AuthUser[]> {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase service role key is not configured or is invalid. Please add a valid VITE_SUPABASE_SERVICE_ROLE_KEY to your .env file.');
+    }
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+    if (error) {
+      console.error('Error listing users:', error);
+      throw new Error(`Failed to list users: ${error.message}`);
+    }
+    return data.users;
+  },
+
+  async updateUserPassword(userId: string, password: string): Promise<void> {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase service role key is not configured or is invalid.');
+    }
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+    if (error) {
+      console.error('Error updating user password:', error);
+      throw new Error(`Failed to update user password: ${error.message}`);
+    }
+  }
+};
+
 
 export const settingsService = {
   async getSettings(): Promise<Record<string, string>> {
@@ -117,22 +169,17 @@ export const categoryService = {
       throw new Error('Supabase not configured');
     }
     
-    try {
-      const { data, error } = await supabase
+    const { data, error } = await supabase
         .from('categories')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) {
+    if (error) {
         console.error('Error fetching categories:', error);
         throw new Error(`Failed to fetch categories: ${error.message}`);
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Category service error:', error);
-      throw error;
     }
+
+    return data || [];
   },
 
   async addCategory(name: string): Promise<Category> {
@@ -238,27 +285,15 @@ export const productService = {
       .eq('is_hidden', false)
       .order('created_at', { ascending: true });
 
-    if (!error) {
-      return (data || []).map(product => ({
+    if (error) {
+        console.error('Error fetching visible products:', error);
+        throw new Error(`Failed to fetch visible products: ${error.message}`);
+    }
+
+    return (data || []).map(product => ({
         ...product,
         is_hidden: product.is_hidden ?? false,
-      }));
-    }
-    
-    console.error('Error fetching visible products:', error);
-
-    if (error.message.includes('is_hidden') || error.code === 'PGRST204') {
-      console.warn('`is_hidden` column not found, falling back to fetching all products.');
-      try {
-        const allProducts = await this.getAllProducts();
-        return allProducts.filter(product => !product.is_hidden);
-      } catch (fallbackError) {
-        console.error('Fallback attempt to get all products also failed:', fallbackError);
-        throw new Error(`Failed to fetch visible products, and the fallback attempt also failed. Original error: ${error.message}`);
-      }
-    }
-
-    throw new Error(`Failed to fetch visible products: ${error.message}`);
+    }));
   },
 
   async addProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product> {
