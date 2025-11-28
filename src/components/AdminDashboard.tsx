@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound, Clock, Search, Filter, TimerOff } from 'lucide-react';
+import { Plus, Edit, Trash2, X, LogOut, Package, DollarSign, RefreshCw, Tag, AlertCircle, CheckCircle, ImageIcon, Eye, EyeOff, Home, UploadCloud, LayoutDashboard, Image as LucideImage, Settings, Link as LinkIcon, Palette, PlayCircle, Move, QrCode, Users, CreditCard, Send, Mail, Printer, MessageSquare, ExternalLink, FileText, KeyRound, Clock, Search, Filter, TimerOff, Copy } from 'lucide-react';
 import { productService, categoryService, winningPhotosService, settingsService, purchaseImagesService, purchaseIntentsService, testSupabaseConnection, Product, Category, WinningPhoto, SiteSetting, PurchaseImage, PurchaseIntent, supabase, invoiceTemplateService, InvoiceTemplateData, ProductKey, productKeysService } from '../lib/supabase';
 import { Link } from 'react-router-dom';
 import SiteContentEditor from './SiteContentEditor';
@@ -29,6 +29,7 @@ const WINNING_PHOTO_PRODUCTS = ['Cheatloop PUBG', 'Cheatloop CODM', 'Sinki'];
 
 type AdminTab = 'dashboard' | 'products' | 'categories' | 'photos' | 'purchase-images' | 'purchase-intents' | 'content' | 'settings' | 'invoice-templates' | 'keys' | 'users' | 'expired-keys';
 
+// ... (PhotoItem and ToggleSwitch components remain unchanged)
 interface PhotoItemProps {
   photo: WinningPhoto;
   isSelected: boolean;
@@ -103,6 +104,7 @@ const ToggleSwitch: React.FC<{
 );
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+  // ... (State variables remain unchanged)
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [winningPhotos, setWinningPhotos] = useState<WinningPhoto[]>([]);
@@ -153,6 +155,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const purchaseImageFileInputRef = useRef<HTMLInputElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // ... (useMemo hooks remain unchanged)
   const availableKeysCount = useMemo(() => {
     return products.reduce((acc, product) => {
         const count = productKeys.filter(key => key.product_id === product.id && !key.is_used).length;
@@ -229,6 +232,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   }, [siteSettings, settingsLoading]);
 
+  // ... (loadData and checkConnection remain unchanged)
   const checkConnection = async () => {
     try {
       setConnectionStatus('checking');
@@ -278,6 +282,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+        setSuccess(`تم نسخ ${label}!`);
+        setTimeout(() => setSuccess(null), 2000);
+    }).catch(() => {
+        setError(`فشل نسخ ${label}`);
+    });
+  };
+
+  // ... (Other handlers: handleWinningPhotoFileChange, handleAddWinningPhotos, etc. remain unchanged)
   const handleWinningPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
@@ -784,21 +798,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       setShowPrintOptions(false);
   };
 
-  const handleDrawKey = async () => {
-    if (!invoiceModalIntent || !invoiceModalIntent.product_id) return;
+  const handleAssignKey = async () => {
+    if (!invoiceModalIntent || !productKeyForInvoice) {
+        setError("يرجى إدخال مفتاح المنتج أولاً.");
+        return;
+    }
+    
     setIsDrawingKey(true);
     setError(null);
-    setProductKeyForInvoice(null);
+    
     try {
-        const key = await productKeysService.claimAvailableKey(
+        await productKeysService.assignKey(
+            productKeyForInvoice,
             invoiceModalIntent.product_id,
             invoiceModalIntent.email,
             invoiceModalIntent.id
         );
-        setProductKeyForInvoice(key);
-        setSuccess('Key successfully drawn and assigned!');
+        setSuccess('تم تخصيص المفتاح بنجاح!');
         await loadData();
-        setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
         setError(err.message);
     } finally {
@@ -864,6 +881,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         
+        // Add Product Key as selectable text at the bottom of the PDF
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0); // Black text
+        pdf.text(`Product Key: ${productKeyForInvoice}`, 40, pdfHeight - 30);
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text("Thank you for your purchase!", 40, pdfHeight - 15);
+
         pdf.save(`invoice-${invoiceModalIntent.id.substring(0, 8)}.pdf`);
 
         setSuccess("تم تحميل ملف PDF. جاري فتح Gmail لإرساله الآن...");
@@ -877,7 +902,10 @@ Thank you for your purchase!
 
 Please find the invoice for your purchase of "${invoiceModalIntent.product_title}" attached to this email.
 
-Product Key: ${productKeyForInvoice}
+----------------------------------------
+Product Key:
+${productKeyForInvoice}
+----------------------------------------
 
 Best regards,
 The ${siteSettings.site_name || 'Cheatloop'} Team
@@ -981,6 +1009,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
             </div>
           )}
 
+          {/* ... (Other tabs remain unchanged) */}
           {activeTab === 'users' && (
             <UserManagement />
           )}
@@ -1186,6 +1215,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
             </div>
           )}
 
+          {/* ... (Other tabs: purchase-images, photos, settings, products, categories remain unchanged) */}
           {activeTab === 'purchase-images' && (
             <div>
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 mb-8">
@@ -1317,6 +1347,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
 
           {activeTab === 'settings' && (
             <div className="space-y-8 max-w-2xl mx-auto">
+              {/* ... (Settings content remains unchanged) */}
               <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
                 <h2 className="text-xl font-bold text-white mb-6 flex items-center space-x-2"><LinkIcon className="w-5 h-5 text-cyan-400"/><span>Social Links</span></h2>
                 <div className="space-y-4">
@@ -1416,6 +1447,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
 
           {activeTab === 'products' && (
             <div>
+              {/* ... (Product management UI remains unchanged) */}
               <div className="flex justify-end mb-6">
                 <button onClick={() => setIsAddingProduct(true)} className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-600 text-white px-4 py-2 rounded-xl transition-all duration-300"><Plus className="w-5 h-5" /><span>Add Product</span></button>
               </div>
@@ -1465,7 +1497,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                         <label className="block text-sm font-medium text-gray-300 mb-2">Product Image</label>
                         <div className="mt-2 flex items-center space-x-6">
                             <div className="shrink-0">
-                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
+                                <img className="h-20 w-20 object-contain rounded-lg border border-slate-600" src={imagePreviewUrl || newProduct.image || 'https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://placehold.co/100x100/1f2937/38bdf8?text=No+Image'} alt="Product preview"/>
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -1506,6 +1538,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
 
           {activeTab === 'categories' && (
             <div>
+              {/* ... (Categories management UI remains unchanged) */}
               <div className="flex justify-end mb-6">
                 <button onClick={() => setIsAddingCategory(true)} className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-xl transition-all duration-300"><Tag className="w-5 h-5" /><span>Add Category</span></button>
               </div>
@@ -1526,6 +1559,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
             </div>
           )}
           
+          {/* ... (Other modals and overlays remain unchanged) */}
           {(selectedPhotos.length > 0 && activeTab === 'photos') && (
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
               <div className="bg-slate-900/80 backdrop-blur-lg border border-slate-700 rounded-xl p-3 flex items-center gap-4 shadow-2xl animate-fade-in-up">
@@ -1595,13 +1629,14 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
       {invoiceModalIntent && (() => {
         const productForIntent = getProductForIntent(invoiceModalIntent);
         const availableKeys = productForIntent ? availableKeysCount[productForIntent.id] || 0 : 0;
+        const unusedKeys = productKeys.filter(k => k.product_id === invoiceModalIntent.product_id && !k.is_used);
         
         const whatsappPhoneNumber = invoiceModalIntent.phone_number?.replace(/\D/g, '') || '';
         const whatsappUrl = `https://wa.me/${whatsappPhoneNumber}?text=${encodeURIComponent(`Hello, here is your invoice and product key for ${invoiceModalIntent.product_title}`)}`;
 
         return (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 max-w-4xl w-full animate-fade-in-up">
+              <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700 max-w-7xl w-full animate-fade-in-up max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-white">إرسال الفاتورة</h3>
                   <button onClick={() => setInvoiceModalIntent(null)} className="p-2 text-gray-400 hover:text-white rounded-full">
@@ -1615,32 +1650,89 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <p><strong className="text-gray-400">المنتج:</strong> {invoiceModalIntent.product_title}</p>
                     <p><strong className="text-gray-400">السعر:</strong> ${productForIntent?.price || 'N/A'}</p>
                     <p><strong className="text-gray-400">الدولة:</strong> {invoiceModalIntent.country}</p>
-                    <p><strong className="text-gray-400">البريد الإلكتروني:</strong> {invoiceModalIntent.email}</p>
-                    <p><strong className="text-gray-400">الهاتف:</strong> {invoiceModalIntent.phone_number}</p>
+                    <p className="flex items-center gap-2">
+                        <strong className="text-gray-400">البريد الإلكتروني:</strong> 
+                        <span>{invoiceModalIntent.email}</span>
+                        <button onClick={() => handleCopyText(invoiceModalIntent.email, 'البريد الإلكتروني')} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-slate-700" title="نسخ البريد الإلكتروني">
+                            <Copy size={14}/>
+                        </button>
+                    </p>
+                    <p className="flex items-center gap-2">
+                        <strong className="text-gray-400">الهاتف:</strong> 
+                        <span>{invoiceModalIntent.phone_number}</span>
+                        <button onClick={() => handleCopyText(invoiceModalIntent.phone_number, 'رقم الهاتف')} className="text-gray-500 hover:text-white transition-colors p-1 rounded hover:bg-slate-700" title="نسخ رقم الهاتف">
+                            <Copy size={14}/>
+                        </button>
+                    </p>
 
                     <div className="pt-4">
                       <label className="block text-sm font-medium text-gray-300 mb-2">مفتاح المنتج</label>
-                      <div className="flex items-center space-x-2">
-                        <input
-                            type="text"
-                            value={productKeyForInvoice || ''}
-                            onChange={(e) => setProductKeyForInvoice(e.target.value)}
-                            className="flex-1 p-3 bg-slate-900 border-2 border-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 rounded-xl text-white font-mono text-center tracking-widest h-[46px]"
-                            placeholder="أدخل المفتاح يدويًا أو اسحبه"
-                        />
+                      <div className="flex items-center space-x-2 mb-4">
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                value={productKeyForInvoice || ''}
+                                onChange={(e) => setProductKeyForInvoice(e.target.value)}
+                                className="w-full p-3 bg-slate-900 border-2 border-slate-700 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 rounded-xl text-white font-mono text-center tracking-widest h-[46px]"
+                                placeholder="أدخل المفتاح يدويًا أو اختر من القائمة"
+                            />
+                            {productKeyForInvoice && (
+                                <button 
+                                    onClick={() => handleCopyText(productKeyForInvoice, 'المفتاح')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+                                    title="نسخ المفتاح"
+                                >
+                                    <Copy size={16} />
+                                </button>
+                            )}
+                        </div>
                         <button 
-                            onClick={handleDrawKey}
-                            disabled={isDrawingKey || availableKeys === 0}
-                            className="px-4 h-[46px] bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={handleAssignKey}
+                            disabled={isDrawingKey || !productKeyForInvoice}
+                            className="px-4 h-[46px] bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                         >
-                            {isDrawingKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-                            <span>سحب مفتاح</span>
+                            {isDrawingKey ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                            <span>استخدام المفتاح</span>
                         </button>
                       </div>
-                      {availableKeys === 0 && !productKeyForInvoice ? (
-                        <p className="text-xs text-red-400 mt-1">لا توجد مفاتيح متاحة لهذا المنتج. يرجى إضافة المزيد.</p>
-                      ) : !productKeyForInvoice && (
-                        <p className="text-xs text-gray-400 mt-1">اضغط على "سحب مفتاح" للحصول على مفتاح متاح. ({availableKeys} متاح)</p>
+                      
+                      {/* Unused Keys List */}
+                      <div className="bg-slate-900/50 rounded-xl border border-slate-700 p-3">
+                        <h5 className="text-xs font-bold text-gray-400 mb-2 flex justify-between items-center">
+                            <span>المفاتيح المتاحة ({unusedKeys.length})</span>
+                            <span className="text-[10px] font-normal">اضغط للنسخ أو التحديد</span>
+                        </h5>
+                        <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                            {unusedKeys.length > 0 ? (
+                                unusedKeys.map((key) => (
+                                    <div key={key.id} className="flex items-center justify-between bg-slate-800 p-2 rounded-lg border border-slate-700 hover:border-cyan-500/50 transition-colors group">
+                                        <code className="text-xs text-cyan-300 font-mono truncate max-w-[200px] select-all">{key.key_value}</code>
+                                        <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => handleCopyText(key.key_value, 'المفتاح')}
+                                                className="p-1.5 text-gray-400 hover:text-white hover:bg-slate-700 rounded transition-colors"
+                                                title="نسخ المفتاح"
+                                            >
+                                                <Copy size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => setProductKeyForInvoice(key.key_value)}
+                                                className="px-2 py-1 text-xs bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600 hover:text-white rounded transition-colors"
+                                                title="استخدام هذا المفتاح"
+                                            >
+                                                تحديد
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-gray-500 text-center py-4">لا توجد مفاتيح متاحة لهذا المنتج.</p>
+                            )}
+                        </div>
+                      </div>
+
+                      {availableKeys === 0 && !productKeyForInvoice && (
+                        <p className="text-xs text-red-400 mt-2">لا توجد مفاتيح متاحة لهذا المنتج. يرجى إضافة المزيد.</p>
                       )}
                     </div>
                   </div>
@@ -1650,7 +1742,7 @@ The ${siteSettings.site_name || 'Cheatloop'} Team
                     <iframe
                       ref={iframeRef}
                       srcDoc={generateInvoiceHTML(invoiceModalIntent, productKeyForInvoice || '')}
-                      className="mt-4 w-full h-80 bg-slate-900 rounded-lg border border-slate-700"
+                      className="mt-4 w-full h-[500px] bg-slate-900 rounded-lg border border-slate-700"
                       title="Invoice Preview"
                     />
                   </div>

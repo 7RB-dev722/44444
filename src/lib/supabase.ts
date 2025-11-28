@@ -631,6 +631,57 @@ export const productKeysService = {
     return data;
   },
 
+  async assignKey(keyValue: string, productId: string, email: string, intentId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    // Check if key exists
+    const { data: existingKey, error: fetchError } = await supabase
+        .from('product_keys')
+        .select('*')
+        .eq('key_value', keyValue)
+        .eq('product_id', productId)
+        .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+        throw new Error(`Error checking key: ${fetchError.message}`);
+    }
+
+    if (existingKey) {
+        if (existingKey.is_used) {
+             if (existingKey.purchase_intent_id === intentId) {
+                 return; // Already assigned to this intent
+             }
+             throw new Error('This key is already used by another user.');
+        }
+        
+        const { error: updateError } = await supabase
+            .from('product_keys')
+            .update({
+                is_used: true,
+                used_by_email: email,
+                used_at: new Date().toISOString(),
+                purchase_intent_id: intentId
+            })
+            .eq('id', existingKey.id);
+            
+        if (updateError) throw new Error(`Failed to assign key: ${updateError.message}`);
+    } else {
+        // Insert new used key
+        const { error: insertError } = await supabase
+            .from('product_keys')
+            .insert([{
+                product_id: productId,
+                key_value: keyValue,
+                is_used: true,
+                used_by_email: email,
+                used_at: new Date().toISOString(),
+                purchase_intent_id: intentId
+            }]);
+            
+        if (insertError) throw new Error(`Failed to add and assign new key: ${insertError.message}`);
+    }
+  },
+
   async returnKey(id: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase

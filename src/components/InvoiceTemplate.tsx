@@ -106,7 +106,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                     th,td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.05);text-align:right;}
                     th{color:var(--muted);font-size:13px;font-weight:600}
                     .keybox{background:rgba(14,165,233,0.1);padding:10px;border-radius:8px;display:flex;justify-content:center;align-items:center;margin-top:8px;direction:ltr;min-height:50px;}
-                    .key{font-family:monospace;font-weight:700;font-size:15px;letter-spacing:1px;text-align:center;word-break:break-all;}
+                    .key{font-family:monospace;font-weight:700;font-size:15px;letter-spacing:1px;text-align:center;word-break:break-all; user-select: all; -webkit-user-select: all; cursor: pointer;}
                     .btn{border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--accent),#6366f1);color:#fff;}
                     .notes{margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6}
                     .invoice-footer{text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.06);}
@@ -150,7 +150,7 @@ const InvoiceTemplate: React.FC<InvoiceTemplateProps> = ({ intent, productKey, s
                             <h4>Product</h4>
                             <div><strong>{intent.product_title}</strong></div>
                             <div className="keybox">
-                                <div className="key" id="productKey"></div>
+                                <div className="key" id="productKey" title="Click to select all"></div>
                             </div>
                         </div>
 
